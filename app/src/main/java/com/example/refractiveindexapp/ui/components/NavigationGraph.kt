@@ -1,0 +1,49 @@
+package com.example.refractiveindexapp.ui.components
+
+import android.content.Context
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCompositionContext
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.refractiveindexapp.parsing.Catalogue
+import com.example.refractiveindexapp.parsing.Page
+import com.example.refractiveindexapp.ui.view.MainViewModel
+
+@Composable
+fun AppNavigation(
+    viewModel: MainViewModel
+) {
+
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = "main"
+    ) {
+
+        composable("main") {
+
+            MainScreen(
+                viewModel = viewModel,
+                onAddMaterial = {
+                    navController.navigate("addMaterial")
+                }
+            )
+        }
+
+
+        composable("addMaterial") {
+
+            AddMaterialScreen(
+                viewModel = viewModel,
+                onFinished = {
+                    navController.popBackStack()
+                }
+            )
+        }
+    }
+}
+
