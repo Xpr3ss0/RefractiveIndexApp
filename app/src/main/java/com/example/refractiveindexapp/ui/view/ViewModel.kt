@@ -1,6 +1,5 @@
 package com.example.refractiveindexapp.ui.view
 
-import android.content.Context
 import androidx.compose.runtime.mutableStateOf
 import com.example.refractiveindexapp.parsing.Catalogue
 import com.example.refractiveindexapp.parsing.Shelf
@@ -9,9 +8,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.refractiveindexapp.database.Material
 import com.example.refractiveindexapp.parsing.Book
-import com.example.refractiveindexapp.parsing.MaterialFileModel
+import com.example.refractiveindexapp.parsing.MaterialModel
 import com.example.refractiveindexapp.parsing.MaterialGatherer
 import com.example.refractiveindexapp.parsing.Page
 import kotlinx.coroutines.launch
@@ -28,7 +26,7 @@ class MainViewModel(val catalogue: Catalogue) : ViewModel() {
         private set
 
     // material
-    var currentMaterial by mutableStateOf<MaterialFileModel?>(null)
+    var currentMaterial by mutableStateOf<MaterialModel?>(null)
 
     fun selectPage(page: Page) {
         viewModelScope.launch {

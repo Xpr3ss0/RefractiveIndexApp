@@ -1,10 +1,8 @@
 package com.example.refractiveindexapp
 
-import com.example.refractiveindexapp.database.Material
+import com.example.refractiveindexapp.database.MaterialTableEntry
 import com.example.refractiveindexapp.parsing.CatalogueParser
 import com.example.refractiveindexapp.parsing.MaterialGatherer
-import com.example.refractiveindexapp.parsing.MaterialFileModel
-import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
 
@@ -18,7 +16,7 @@ class MaterialParserTest {
         val catalogue = CatalogueParser().parse(textCatalogue)
         val parser = MaterialGatherer(catalogue)
 
-        val material : Material? = parser.gatherSBP(shelfName = "main", bookName = "SiO2", pageName = "Nyakuchena")
+        val material : MaterialTableEntry? = parser.gatherSBP(shelfName = "main", bookName = "SiO2", pageName = "Nyakuchena")
 
         println("Number of shelves in catalog: ${catalogue.entries.size}")
         println()

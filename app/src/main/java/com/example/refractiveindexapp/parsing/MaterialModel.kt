@@ -1,6 +1,8 @@
 package com.example.refractiveindexapp.parsing
 
-data class MaterialFileModel(
+import com.example.refractiveindexapp.physics.DispersionModel
+
+data class MaterialModel(
     val references: String? = null,
     val comments: String? = null,
     val conditions: Conditions? = null,
@@ -9,6 +11,7 @@ data class MaterialFileModel(
     val tabulatedData: TabulatedData? = null,
 
     // coefficients
+    val dispersionData: DispersionData? = null,
     val dispersionModel: DispersionModel? = null
 
 )
@@ -17,7 +20,7 @@ data class TabulatedData (
     val content: String
 )
 
-data class DispersionModel (
+data class DispersionData (
     val coefficients: String,
     val formulaType: Int,
     val wavelengthRange: String

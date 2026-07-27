@@ -1,8 +1,7 @@
 package com.example.refractiveindexapp.parsing
 
-import android.content.Context
-import com.example.refractiveindexapp.database.Coefficient
-import com.example.refractiveindexapp.database.Material
+import com.example.refractiveindexapp.physics.DispersionModel
+import com.example.refractiveindexapp.physics.DispersionModelFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.yaml.snakeyaml.Yaml
@@ -10,7 +9,7 @@ import org.yaml.snakeyaml.Yaml
 class MaterialParser {
 
 
-    fun parse(text: String?): MaterialFileModel? {
+    fun parse(text: String?): MaterialModel? {
 
         if (text == null) {
             return null
@@ -22,6 +21,7 @@ class MaterialParser {
         val root = yaml.load<Map<String, Any>>(text)
 
         var tabulatedData: TabulatedData? = null
+        var dispersionData: DispersionData? = null
         var dispersionModel: DispersionModel? = null
 
         if ("DATA" in root) {
@@ -32,11 +32,14 @@ class MaterialParser {
 
                 when {
                     type.startsWith("formula") -> {
-                        dispersionModel = DispersionModel(
+                        dispersionData = DispersionData(
                             coefficients = it["coefficients"] as String,
                             formulaType = type.last().digitToInt(),
                             wavelengthRange = it["wavelength_range"] as String
                         )
+                        dispersionModel = DispersionModelFactory.create(
+                            type = dispersionData.formulaType,
+                            coefficients = parseDoubleArray(dispersionData.coefficients))
                     }
                     type.startsWith("tabulated") -> {
                         tabulatedData = TabulatedData(
@@ -49,11 +52,12 @@ class MaterialParser {
             }
         }
 
-        return MaterialFileModel(
+        return MaterialModel(
             references = root["REFERENCES"] as? String,
             comments = root["COMMENTS"] as? String,
             conditions = parseConditions(root["CONDITIONS"]),
             tabulatedData = tabulatedData,
+            dispersionData = dispersionData,
             dispersionModel = dispersionModel
         )
     }
@@ -88,6 +92,14 @@ class MaterialParser {
             .split(Regex("\\s+"))
             .mapNotNull { it.toDoubleOrNull() }
     }
+    private fun parseDoubleArray(value: String): DoubleArray {
+
+        return value
+            .trim()
+            .split(Regex("\\s+"))
+            .map { it.toDouble() }
+            .toDoubleArray()
+    }
 }
 
 class MaterialGatherer(val catalogue: Catalogue) {
@@ -104,7 +116,7 @@ class MaterialGatherer(val catalogue: Catalogue) {
 
     }
 
-    suspend fun pullPageData(page: Page) : MaterialFileModel? =
+    suspend fun pullPageData(page: Page) : MaterialModel? =
         withContext(Dispatchers.IO) {
             // get material yml file and parse
             val url = "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/master/database/data/${page.dataPath}"
