@@ -59,9 +59,11 @@ dependencies {
             module = "annotations"
         )
     }
+
     implementation(libs.androidx.room.ktx)
     implementation(libs.snakeyaml)
     implementation(libs.androidx.compose.navigation)
+    implementation(project(":scientificPlot"))
     testImplementation(libs.junit)
     // androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

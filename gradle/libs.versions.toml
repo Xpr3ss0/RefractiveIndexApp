@@ -14,6 +14,8 @@ roomRuntime = "2.8.4"
 snakeyaml = "2.5"
 navigationCompose = "2.9.8"
 runtime = "1.11.4"
+appcompat = "1.7.1"
+material = "1.14.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -36,7 +38,10 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", name = "room-
 androidx-room-ktx = { module = "androidx.room:room-ktx", name = "room-ktx", version.ref = "roomKtx"}
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+android-library = { id = "com.android.library", version.ref = "agp" }
