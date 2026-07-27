@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.example.refractiveindexapp.ui.view.MainViewModel
+import dev.xpr3ss0.scientificplot.ScientificPlot
 
 @Composable
 fun MainScreen(
@@ -35,7 +36,7 @@ fun MainScreen(
             Text(viewModel.currentMaterial?.dispersionData?.coefficients ?: "...")
             Text(viewModel.currentMaterial?.tabulatedData?.type ?: "no tabulated data available.")
 
-            DispersionPlot(viewModel.wavelengthPlotData, viewModel.indexPlotData)
+            // ScientificPlot(viewModel.wavelengthPlotData, viewModel.indexPlotData)
         }
 
     }

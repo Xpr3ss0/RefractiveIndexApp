@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun DispersionPlot(
+fun DispersionPlotOld(
     wavelengths: DoubleArray?,
     values: DoubleArray?,
     modifier: Modifier = Modifier
