@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModelProvider
 import com.example.refractiveindexapp.ui.theme.RefractiveIndexAppTheme
-import com.example.refractiveindexapp.database.test
 import com.example.refractiveindexapp.parsing.Catalogue
 import com.example.refractiveindexapp.ui.components.AppNavigation
 import com.example.refractiveindexapp.ui.view.MainViewModel

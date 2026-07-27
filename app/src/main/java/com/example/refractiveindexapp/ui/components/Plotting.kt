@@ -12,8 +12,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun DispersionPlot(
-    wavelengths: DoubleArray,
-    values: DoubleArray,
+    wavelengths: DoubleArray?,
+    values: DoubleArray?,
     modifier: Modifier = Modifier
 ) {
     Canvas(
@@ -22,7 +22,8 @@ fun DispersionPlot(
             .height(250.dp)
     ) {
 
-        if (wavelengths.isEmpty()) return@Canvas
+        if (wavelengths == null || wavelengths.isEmpty()) return@Canvas
+        if (values == null || values.isEmpty()) return@Canvas
 
         val xMin = wavelengths.first()
         val xMax = wavelengths.last()

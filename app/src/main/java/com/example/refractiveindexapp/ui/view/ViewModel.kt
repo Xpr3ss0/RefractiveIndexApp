@@ -28,10 +28,22 @@ class MainViewModel(val catalogue: Catalogue) : ViewModel() {
     // material
     var currentMaterial by mutableStateOf<MaterialModel?>(null)
 
+    // plotting data
+    var wavelengthPlotData by mutableStateOf<DoubleArray?>(null)
+    var indexPlotData by mutableStateOf<DoubleArray?>(null)
+
     fun selectPage(page: Page) {
         viewModelScope.launch {
             selectedPage = page
             currentMaterial = MaterialGatherer(catalogue).pullPageData(page)
+            if (currentMaterial != null && currentMaterial!!.dispersionModel != null) {
+                wavelengthPlotData = currentMaterial!!.dispersionModel!!.wavelengthArray()
+                indexPlotData = currentMaterial!!.dispersionModel!!.refractiveIndex(wavelengthPlotData!!)
+            }
+            else {
+                wavelengthPlotData = null
+                indexPlotData = null
+            }
         }
     }
 

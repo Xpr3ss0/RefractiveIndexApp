@@ -37,9 +37,12 @@ class MaterialParser {
                             formulaType = type.last().digitToInt(),
                             wavelengthRange = it["wavelength_range"] as String
                         )
+                        val wavelengthRange = parseDoubleList(dispersionData.wavelengthRange)
                         dispersionModel = DispersionModelFactory.create(
                             type = dispersionData.formulaType,
-                            coefficients = parseDoubleArray(dispersionData.coefficients))
+                            coefficients = parseDoubleArray(dispersionData.coefficients),
+                            wavelengthMin = wavelengthRange[0],
+                            wavelengthMax = wavelengthRange[1])
                     }
                     type.startsWith("tabulated") -> {
                         tabulatedData = TabulatedData(
@@ -83,11 +86,9 @@ class MaterialParser {
      *
      * "0 1.31 0.009 ..."
      */
-    private fun parseDoubleList(value: Any?): List<Double>? {
+    private fun parseDoubleList(value: String): List<Double> {
 
-        val string = value as? String ?: return null
-
-        return string
+        return value
             .trim()
             .split(Regex("\\s+"))
             .mapNotNull { it.toDoubleOrNull() }

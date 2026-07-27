@@ -34,8 +34,8 @@ fun MainScreen(
             Text(viewModel.currentMaterial?.dispersionData?.formulaType?.toString() ?: "no dispersion coefficients available.")
             Text(viewModel.currentMaterial?.dispersionData?.coefficients ?: "...")
             Text(viewModel.currentMaterial?.tabulatedData?.type ?: "no tabulated data available.")
-            Text(viewModel.currentMaterial?.tabulatedData?.content ?: "...")
-            //VerticalDivider(thickness = 10.dp)
+
+            DispersionPlot(viewModel.wavelengthPlotData, viewModel.indexPlotData)
         }
 
     }
