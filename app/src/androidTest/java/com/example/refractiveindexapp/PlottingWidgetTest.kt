@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.xpr3ss0.scientificplot.ScientificPlot
 import dev.xpr3ss0.scientificplot.model.DataSeries
+import dev.xpr3ss0.scientificplot.model.SeriesPlot
 import dev.xpr3ss0.scientificplot.state.PlotManager
 import dev.xpr3ss0.scientificplot.state.PlotState
 import org.junit.Rule
@@ -74,11 +75,19 @@ class PlottingWidgetTest {
             .onNodeWithTag("ScientificPlotTest")
             .assertIsDisplayed()
 
+
         val testInputYData2 = List<Double>(1000) { i ->
-            sin(testInputXData[i])
+            3 * sin(testInputXData[i])
         }
+
         val testDataSeries2 = DataSeries(testInputXData, testInputYData2)
-        plotManager.plotState = plotManager.plotState.copy(dataSeries = testDataSeries2)
+        val plotState2 = SeriesPlot.dashedPlot(testDataSeries2, "test plot 2")
+        plotManager.addPlot(plotState2)
+
+        println()
+
+        plotManager.setRange(yMax = 1F)
+        println()
 
     }
 
