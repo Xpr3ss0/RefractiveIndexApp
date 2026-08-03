@@ -17,7 +17,10 @@ data class MaterialModel(
 )
 data class TabulatedData (
     val type: String,
-    val content: String
+    val content: String,
+    val wavelengthArray: List<Double>,
+    val nArray: List<Double>? = null,
+    val kArray: List<Double>? = null
 )
 
 data class DispersionData (

@@ -65,7 +65,7 @@ class Sellmeier(
     override fun refractiveIndex(wavelength: Double): Double {
         var res = coefficients[0]
         val lmd2 = wavelength * wavelength
-        for (i in 2..16 step 2) {
+        for (i in 1..15 step 2) {
             res += coefficients[i] * lmd2 / (lmd2 - coefficients[i+1]*coefficients[i+1])
         }
         val n2 = res + 1

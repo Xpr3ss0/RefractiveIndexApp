@@ -45,9 +45,37 @@ class MaterialParser {
                             wavelengthMax = wavelengthRange[1])
                     }
                     type.startsWith("tabulated") -> {
+                        val data = parseDoubleTable(it["data"] as String)
+                        val dataType = type.split(Regex("\\s+"))[1]
+                        val nList: List<Double>?
+                        val kList: List<Double>?
+                        val lmdList = data[0]
+                        when (dataType) {
+                            "n" -> {
+                                if (data.size != 2) error("Parsing error: type 'n' implies 2 columns, but have ${data.size}.")
+                                nList = data[1]
+                                kList = null
+                            }
+                            "k" -> {
+                                if (data.size != 2) error("Parsing error: type 'k' implies 2 columns, but have ${data.size}.")
+                                nList = null
+                                kList = data[1]
+                            }
+                            "nk" -> {
+                                if (data.size != 3) error("Parsing error: type 'nk' implies 3 columns, but have ${data.size}.")
+                                nList = data[1]
+                                kList = data[2]
+                            }
+                            else -> {
+                                error("Tabulated data type $dataType not recognized.")
+                            }
+                        }
                         tabulatedData = TabulatedData(
                             type = type,
-                            content = it["data"] as String
+                            content = it["data"] as String,
+                            wavelengthArray = lmdList,
+                            nArray = nList,
+                            kArray = kList
                         )
                     }
                 }
@@ -100,6 +128,16 @@ class MaterialParser {
             .split(Regex("\\s+"))
             .map { it.toDouble() }
             .toDoubleArray()
+    }
+
+    private fun parseDoubleTable(value: String): List<List<Double>> {
+        val rows = value.trimIndent().trim().lines().map { it.trim().split(Regex("\\s+")) }
+
+        if (rows.isEmpty() || rows.first().isEmpty()) return emptyList()
+
+        return rows[0].indices.map { columIndex ->
+            rows.map { row -> row[columIndex].toDouble() }
+        }
     }
 }
 

@@ -36,6 +36,8 @@ fun MainScreen(
             Text(viewModel.currentMaterial?.dispersionData?.coefficients ?: "...")
             Text(viewModel.currentMaterial?.tabulatedData?.type ?: "no tabulated data available.")
 
+            ScientificPlot(viewModel.plotManager)
+
             // ScientificPlot(viewModel.wavelengthPlotData, viewModel.indexPlotData)
         }
 
