@@ -1,8 +1,9 @@
 package com.example.refractiveindexapp
 
-import com.example.refractiveindexapp.database.MaterialTableEntry
 import com.example.refractiveindexapp.parsing.CatalogueParser
 import com.example.refractiveindexapp.parsing.MaterialGatherer
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import java.io.File
 
@@ -16,18 +17,11 @@ class MaterialParserTest {
         val catalogue = CatalogueParser().parse(textCatalogue)
         val parser = MaterialGatherer(catalogue)
 
-        val material : MaterialTableEntry? = parser.gatherSBP(shelfName = "main", bookName = "SiO2", pageName = "Nyakuchena")
+        val page = parser.gatherSBP(shelfName = "main", bookName = "SiO2", pageName = "Nyakuchena")
 
-        println("Number of shelves in catalog: ${catalogue.entries.size}")
-        println()
-
-        assert(material!=null)
-
-        println("material comments: ${material?.comments}")
-        println("material references: ${material?.references}")
-        println("material is tabulated: ${material?.isTabulated}")
-        println("material equation type: ${material?.equationType}")
-        println("material temperature: ${material?.temperature} K")
+        assertNotNull(page)
+        assertEquals("Nyakuchena", page?.id)
+        assertEquals("main/SiO2/nk/Nyakuchena.yml", page?.dataPath)
 
     }
 }

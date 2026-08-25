@@ -1,8 +1,10 @@
 package com.example.refractiveindexapp
 
 import com.example.refractiveindexapp.parsing.downloadFileDirectly
+import org.junit.Ignore
 import org.junit.Test
 
+@Ignore("Network integration check; run manually rather than as a JVM unit test.")
 class DownloadFileTest {
 
     @Test

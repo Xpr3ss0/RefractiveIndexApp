@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-07-26T21:33:31.007429850Z">
+        <DropdownSelection timestamp="2026-08-25T16:46:43.769601363Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=/home/julius/.android/avd/Pixel_6.avd" />
@@ -16,6 +16,17 @@
       <SelectionState runConfigName="testScientificPlot()">
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2026-07-26T21:33:31.007429850Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="LocalEmulator" identifier="path=/home/julius/.android/avd/Pixel_6.avd" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="startsMainScreenWithTamosauskasExtraordinaryMaterialSelected()">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2026-08-25T16:46:43.769601363Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=/home/julius/.android/avd/Pixel_6.avd" />

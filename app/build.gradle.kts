@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.snakeyaml)
     implementation(libs.androidx.compose.navigation)
+    implementation(libs.markwon.core)
     implementation(project(":scientificPlot"))
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

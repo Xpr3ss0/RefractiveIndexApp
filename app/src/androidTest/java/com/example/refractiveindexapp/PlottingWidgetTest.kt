@@ -3,7 +3,6 @@ package com.example.refractiveindexapp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,8 +33,8 @@ class PlottingWidgetTest {
     fun testScientificPlot() {
         // 2. Prepare your input data
         val nPoints : Int = 1000
-        val start : Double = .00002
-        val stop : Double = 23.3
+        val start : Double = 50024.3
+        val stop : Double = 50024 + 4 * 3.14
         val step : Double = (stop - start) / (nPoints - 1)
         val testInputXData = List<Double>(1000) { i ->
             start + i * step
@@ -49,6 +48,9 @@ class PlottingWidgetTest {
         )
         val plotState = PlotState.defaultFromData(testDataSeries)
         val plotManager = PlotManager(plotState)
+
+        plotManager.setAxisLabels(xLabel = "x", yLabel = "f(x)")
+
 
         // 3. Set the content of the test rule to your composable with the input data
         composeTestRule.setContent {
@@ -64,7 +66,7 @@ class PlottingWidgetTest {
             ) {
                 ScientificPlot(
                     plotManager,
-                    modifier = modifier
+                    modifier = modifier,
                 )
             }
         }

@@ -11,16 +11,26 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.refractiveindexapp.parsing.Book
 import com.example.refractiveindexapp.parsing.MaterialModel
-import com.example.refractiveindexapp.parsing.MaterialGatherer
+import com.example.refractiveindexapp.parsing.MaterialRepository
 import com.example.refractiveindexapp.parsing.Page
+import com.example.refractiveindexapp.parsing.RemoteMaterialRepository
 import dev.xpr3ss0.scientificplot.model.DataSeries
-import dev.xpr3ss0.scientificplot.model.PlotStyle
 import dev.xpr3ss0.scientificplot.model.SeriesPlot
 import dev.xpr3ss0.scientificplot.state.PlotManager
 import dev.xpr3ss0.scientificplot.state.PlotState
 import kotlinx.coroutines.launch
 
-class MainViewModel(val catalogue: Catalogue) : ViewModel() {
+sealed interface MaterialLoadState {
+    data object Idle : MaterialLoadState
+    data object Loading : MaterialLoadState
+    data object Loaded : MaterialLoadState
+    data class Failed(val message: String) : MaterialLoadState
+}
+
+class MainViewModel(
+    val catalogue: Catalogue,
+    private val materialRepository: MaterialRepository = RemoteMaterialRepository()
+) : ViewModel() {
 
     var selectedShelf by mutableStateOf<Shelf?>(null)
         private set
@@ -33,73 +43,105 @@ class MainViewModel(val catalogue: Catalogue) : ViewModel() {
 
     // material
     var currentMaterial by mutableStateOf<MaterialModel?>(null)
+        private set
 
-    // plotting data
-    var wavelengthPlotData by mutableStateOf<DoubleArray?>(null)
-    var indexPlotData by mutableStateOf<DoubleArray?>(null)
+    var materialLoadState by mutableStateOf<MaterialLoadState>(MaterialLoadState.Idle)
+        private set
 
-    val plotManager = PlotManager(PlotState.defaultFromEmpty())
+    val dispersionPlotManager = PlotManager(PlotState.defaultFromEmpty()).apply {
+        setAxisLabels(xLabel = "Wavelength (µm)", yLabel = "Refractive index")
+    }
+    val extinctionPlotManager = PlotManager(PlotState.defaultFromEmpty()).apply {
+        setAxisLabels(xLabel = "Wavelength (µm)", yLabel = "Extinction coefficient k")
+    }
 
     fun selectPage(page: Page) {
         viewModelScope.launch {
             selectedPage = page
-            currentMaterial = MaterialGatherer(catalogue).pullPageData(page)
-            updateRefractiveIndexPlot()
-            if (currentMaterial != null && currentMaterial!!.dispersionModel != null) {
-                wavelengthPlotData = currentMaterial!!.dispersionModel!!.wavelengthArray()
-                indexPlotData = currentMaterial!!.dispersionModel!!.refractiveIndex(wavelengthPlotData!!)
-            }
-            else {
-                wavelengthPlotData = null
-                indexPlotData = null
-            }
+            currentMaterial = null
+            materialLoadState = MaterialLoadState.Loading
+            clearPlots()
+            materialRepository.load(page).fold(
+                onSuccess = { material ->
+                    currentMaterial = material
+                    updateOpticalPlots()
+                    materialLoadState = MaterialLoadState.Loaded
+                },
+                onFailure = { throwable ->
+                    materialLoadState = MaterialLoadState.Failed(
+                        throwable.message ?: "Could not load this material."
+                    )
+                }
+            )
         }
     }
 
     fun selectBook(book: Book) {
+        if (selectedBook != book) {
+            selectedPage = null
+            currentMaterial = null
+            materialLoadState = MaterialLoadState.Idle
+            clearPlots()
+        }
         selectedBook = book
     }
 
     fun selectShelf(shelf: Shelf) {
+        if (selectedShelf != shelf) {
+            selectedBook = null
+            selectedPage = null
+            currentMaterial = null
+            materialLoadState = MaterialLoadState.Idle
+            clearPlots()
+        }
         selectedShelf = shelf
     }
 
-    fun updateRefractiveIndexPlot() {
-        plotManager.clearPlot()
+    private fun updateOpticalPlots() {
+        clearPlots()
         currentMaterial?.let {
-            when  {
-                it.dispersionModel != null -> {
-                    val lmdModel = it.dispersionModel.wavelengthArray(1000)
-                    val nModel = it.dispersionModel.refractiveIndex(lmdModel)
-                    val plot = SeriesPlot.linePlot(
-                        dataSeries = DataSeries(lmdModel.toList(), nModel.toList()),
+            it.dispersionModel?.let { model ->
+                val wavelengths = model.wavelengthArray(1000)
+                dispersionPlotManager.addPlot(
+                    SeriesPlot.linePlot(
+                        dataSeries = DataSeries(wavelengths.toList(), model.refractiveIndex(wavelengths).toList()),
                         name = "dispersion model",
-                        color = Color.Blue
+                        color = Color(0xFF1565C0)
                     )
-                    plotManager.addPlot(plot)
+                )
+            }
+            it.tabulatedData?.let { tabulated ->
+                tabulated.nArray?.let { values ->
+                    dispersionPlotManager.addPlot(
+                        SeriesPlot.dashedPlot(
+                            DataSeries(tabulated.wavelengthArray, values),
+                            name = "tabulated n",
+                            color = Color(0xFF00897B)
+                        )
+                    )
                 }
-                it.tabulatedData != null -> {
-                    val lmdTab = it.tabulatedData.wavelengthArray
-                    val nTab = it.tabulatedData.nArray
-                    val kTab = it.tabulatedData.kArray
-                    if (nTab != null) {
-                        val nSeries = DataSeries(lmdTab, nTab)
-                        val nPlot = SeriesPlot.dashedPlot(nSeries, "tabulated n")
-                        plotManager.addPlot(nPlot)
-                    }
-                    if (kTab != null) {
-                        val kSeries = DataSeries(lmdTab, kTab)
-                        val kPlot = SeriesPlot.dashedPlot(kSeries, "tabulated k")
-                        plotManager.addPlot(kPlot)
-                    }
+                tabulated.kArray?.let { values ->
+                    extinctionPlotManager.addPlot(
+                        SeriesPlot.dashedPlot(
+                            DataSeries(tabulated.wavelengthArray, values),
+                            name = "tabulated k",
+                            color = Color(0xFFAD1457)
+                        )
+                    )
                 }
             }
         }
     }
+
+    private fun clearPlots() {
+        dispersionPlotManager.clearPlot()
+        extinctionPlotManager.clearPlot()
+    }
 }
 
 class MainViewModelFactory(
-    private val catalogue: Catalogue
+    private val catalogue: Catalogue,
+    private val materialRepository: MaterialRepository = RemoteMaterialRepository()
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(
@@ -108,7 +150,7 @@ class MainViewModelFactory(
 
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return MainViewModel(catalogue) as T
+            return MainViewModel(catalogue, materialRepository) as T
         }
 
         throw IllegalArgumentException("Unknown ViewModel class")
