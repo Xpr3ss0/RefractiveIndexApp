@@ -12,6 +12,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,7 +43,7 @@ fun MainScreen(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
@@ -175,9 +176,15 @@ private fun DetailRow(label: String, value: String) {
 @Composable
 private fun DispersionPlotCard(viewModel: MainViewModel) {
     Card {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Dispersion", modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp), style = MaterialTheme.typography.titleMedium)
+        Column(Modifier.padding(horizontal = 4.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            PlotCardHeader("Dispersion", viewModel.dispersionPlotManager::resetViewport)
             ScientificPlot(viewModel.dispersionPlotManager)
+            Text(
+                "Pinch to zoom, drag to pan, tap for values.",
+                modifier = Modifier.padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -185,9 +192,25 @@ private fun DispersionPlotCard(viewModel: MainViewModel) {
 @Composable
 private fun ExtinctionPlotCard(viewModel: MainViewModel) {
     Card {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Extinction coefficient", modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp), style = MaterialTheme.typography.titleMedium)
+        Column(Modifier.padding(horizontal = 4.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            PlotCardHeader("Extinction coefficient", viewModel.extinctionPlotManager::resetViewport)
             ScientificPlot(viewModel.extinctionPlotManager)
+            Text(
+                "Pinch to zoom, drag to pan, tap for values.",
+                modifier = Modifier.padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlotCardHeader(title: String, onReset: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(title, modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp), style = MaterialTheme.typography.titleMedium)
+        OutlinedButton(onClick = onReset) {
+            Text("Reset view")
         }
     }
 }
