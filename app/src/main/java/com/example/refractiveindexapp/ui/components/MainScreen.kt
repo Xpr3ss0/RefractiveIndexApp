@@ -69,6 +69,9 @@ fun MainScreen(
                     if (material.tabulatedData?.kArray != null) {
                         item { ExtinctionPlotCard(viewModel) }
                     }
+                    material.references?.let { references ->
+                        item { ReferenceCard(references) }
+                    }
                 }
                 is MaterialLoadState.Failed -> item {
                     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
@@ -141,10 +144,22 @@ private fun MaterialSummary(material: MaterialModel) {
                 Text("Notes", style = MaterialTheme.typography.labelLarge)
                 DatabaseRichText(it)
             }
-            material.references?.let {
-                Text("Reference", style = MaterialTheme.typography.labelLarge)
-                DatabaseRichText(it, maxLines = 5)
-            }
+        }
+    }
+}
+
+@Composable
+private fun ReferenceCard(references: String) {
+    Card {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Reference", style = MaterialTheme.typography.titleMedium)
+            DatabaseRichText(
+                text = references,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

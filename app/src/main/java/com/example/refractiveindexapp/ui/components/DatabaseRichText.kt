@@ -32,11 +32,13 @@ fun DatabaseRichText(
             TextView(it).apply {
                 isClickable = false
                 isFocusable = false
+                isSingleLine = false
             }
         },
         update = { textView ->
             textView.setTextColor(textColor)
             textView.maxLines = maxLines
+            textView.ellipsize = null
             textView.movementMethod = if (linksEnabled) LinkMovementMethod.getInstance() else null
             textView.linksClickable = linksEnabled
             textView.setOnClickListener(
