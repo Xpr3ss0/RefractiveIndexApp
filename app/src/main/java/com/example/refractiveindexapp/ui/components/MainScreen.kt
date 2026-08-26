@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -13,16 +14,20 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.refractiveindexapp.parsing.MaterialModel
 import com.example.refractiveindexapp.ui.view.MainViewModel
 import com.example.refractiveindexapp.ui.view.MaterialLoadState
+import com.example.refractiveindexapp.physics.DerivedOpticalConstants
+import com.example.refractiveindexapp.physics.DerivedValue
 import dev.xpr3ss0.scientificplot.ScientificPlot
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,6 +71,7 @@ fun MainScreen(
                 }
                 MaterialLoadState.Loaded -> viewModel.currentMaterial?.let { material ->
                     item { MaterialSummary(material) }
+                    item { DerivedOpticalConstantsCard(viewModel) }
                     item { DispersionPlotCard(viewModel) }
                     if (material.tabulatedData?.kArray != null) {
                         item { ExtinctionPlotCard(viewModel) }
@@ -171,6 +177,70 @@ private fun DetailRow(label: String, value: String) {
         Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, modifier = Modifier.weight(1f))
     }
+}
+
+@Composable
+private fun DerivedOpticalConstantsCard(viewModel: MainViewModel) {
+    val constants = viewModel.derivedOpticalConstants
+    Card {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("Derived optical constants", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(
+                value = viewModel.derivedWavelengthText,
+                onValueChange = viewModel::updateDerivedWavelength,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Wavelength (µm)") },
+                singleLine = true,
+                isError = viewModel.derivedWavelengthError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                supportingText = viewModel.derivedWavelengthError?.let { error -> { Text(error) } }
+            )
+            if (constants != null) DerivedConstantsRows(constants)
+        }
+    }
+}
+
+@Composable
+private fun DerivedConstantsRows(constants: DerivedOpticalConstants) {
+    val entries = listOf(
+        "Refractive index n" to constants.refractiveIndex,
+        "Extinction coefficient k" to constants.extinctionCoefficient,
+        "Relative permittivity ε₁" to constants.epsilon1,
+        "Relative permittivity ε₂" to constants.epsilon2,
+        "Absorption coefficient α (cm⁻¹)" to constants.absorptionCoefficientCmInverse,
+        "Abbe number Vd" to constants.abbeNumber,
+        "Chromatic dispersion dn/dλ (µm⁻¹)" to constants.chromaticDispersionPerMicrometre,
+        "Group index ng" to constants.groupIndex,
+        "GVD (fs²/mm)" to constants.groupVelocityDispersionFsSquaredPerMm,
+        "D (ps/(nm km))" to constants.dispersionPsPerNmKm
+    )
+    entries.forEach { (label, value) -> DerivedConstantRow(label, value) }
+}
+
+@Composable
+private fun DerivedConstantRow(label: String, value: DerivedValue) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (value.isAvailable) {
+            Text(formatOpticalValue(value.value!!), modifier = Modifier.weight(1f))
+        } else {
+            Text(
+                "— ${value.unavailableReason}",
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+private fun formatOpticalValue(value: Double): String = when {
+    value == 0.0 -> "0"
+    kotlin.math.abs(value) in 1e-3..1e5 -> "%.5f".format(java.util.Locale.US, value).trimEnd('0').trimEnd('.')
+    else -> "%.5e".format(java.util.Locale.US, value)
 }
 
 @Composable

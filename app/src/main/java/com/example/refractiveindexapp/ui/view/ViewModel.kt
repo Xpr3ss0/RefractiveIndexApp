@@ -14,6 +14,8 @@ import com.example.refractiveindexapp.parsing.MaterialModel
 import com.example.refractiveindexapp.parsing.MaterialRepository
 import com.example.refractiveindexapp.parsing.Page
 import com.example.refractiveindexapp.parsing.RemoteMaterialRepository
+import com.example.refractiveindexapp.physics.DerivedOpticalConstants
+import com.example.refractiveindexapp.physics.DerivedOpticalConstantsCalculator
 import dev.xpr3ss0.scientificplot.model.DataSeries
 import dev.xpr3ss0.scientificplot.model.SeriesPlot
 import dev.xpr3ss0.scientificplot.state.PlotManager
@@ -48,6 +50,15 @@ class MainViewModel(
     var materialLoadState by mutableStateOf<MaterialLoadState>(MaterialLoadState.Idle)
         private set
 
+    var derivedWavelengthText by mutableStateOf("0.5876")
+        private set
+
+    var derivedWavelengthError by mutableStateOf<String?>(null)
+        private set
+
+    var derivedOpticalConstants by mutableStateOf<DerivedOpticalConstants?>(null)
+        private set
+
     val dispersionPlotManager = PlotManager(PlotState.defaultFromEmpty()).apply {
         setAxisLabels(xLabel = "Wavelength (µm)", yLabel = "Refractive index")
     }
@@ -59,12 +70,14 @@ class MainViewModel(
         viewModelScope.launch {
             selectedPage = page
             currentMaterial = null
+            derivedOpticalConstants = null
             materialLoadState = MaterialLoadState.Loading
             clearPlots()
             materialRepository.load(page).fold(
                 onSuccess = { material ->
                     currentMaterial = material
                     updateOpticalPlots()
+                    updateDerivedOpticalConstants()
                     materialLoadState = MaterialLoadState.Loaded
                 },
                 onFailure = { throwable ->
@@ -82,6 +95,7 @@ class MainViewModel(
             currentMaterial = null
             materialLoadState = MaterialLoadState.Idle
             clearPlots()
+            derivedOpticalConstants = null
         }
         selectedBook = book
     }
@@ -93,6 +107,7 @@ class MainViewModel(
             currentMaterial = null
             materialLoadState = MaterialLoadState.Idle
             clearPlots()
+            derivedOpticalConstants = null
         }
         selectedShelf = shelf
     }
@@ -136,6 +151,24 @@ class MainViewModel(
     private fun clearPlots() {
         dispersionPlotManager.clearPlot()
         extinctionPlotManager.clearPlot()
+    }
+
+    fun updateDerivedWavelength(value: String) {
+        derivedWavelengthText = value
+        updateDerivedOpticalConstants()
+    }
+
+    private fun updateDerivedOpticalConstants() {
+        val wavelength = derivedWavelengthText.replace(',', '.').toDoubleOrNull()
+        if (wavelength == null || !wavelength.isFinite() || wavelength <= 0.0) {
+            derivedWavelengthError = "Enter a positive wavelength in µm"
+            derivedOpticalConstants = null
+            return
+        }
+        derivedWavelengthError = null
+        derivedOpticalConstants = currentMaterial?.let {
+            DerivedOpticalConstantsCalculator.calculate(it, wavelength)
+        }
     }
 }
 

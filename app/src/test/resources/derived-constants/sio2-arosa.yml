@@ -1,0 +1,4 @@
+DATA:
+  - type: formula 1
+    wavelength_range: 0.26 1.7
+    coefficients: 0 0.9310 0.079 0.1735 0.130 2.1121 14.918

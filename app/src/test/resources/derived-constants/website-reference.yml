@@ -1,0 +1,34 @@
+# Values copied from refractiveindex.info at 0.5876 µm on 2026-08-25.
+# Source pages: main/BaB2O4/Tamosauskas-e, main/SiO2/Arosa, main/In/Mathewson-298K.
+- id: bbo-tamosauskas-e
+  source: bbo-tamosauskas-e.yml
+  wavelength: 0.5876
+  expected:
+    epsilon1: 2.4078
+    epsilon2: 1.5471e-9
+    absorption: 1.0661e-4
+    abbe: 61.39
+    dn_d_lambda: -0.046088
+    group_index: 1.5788
+    gvd: 86.200
+    d: -470.26
+- id: sio2-arosa
+  source: sio2-arosa.yml
+  wavelength: 0.5876
+  expected:
+    abbe: 67.98
+    dn_d_lambda: -0.035156
+    group_index: 1.4792
+    gvd: 57.081
+    d: -311.41
+  unavailable: [epsilon1, epsilon2, absorption]
+- id: in-mathewson-298k
+  source: in-mathewson-298k.yml
+  wavelength: 0.5876
+  expected:
+    epsilon1: -25.794
+    epsilon2: 12.077
+    absorption: 1.1141e6
+    dn_d_lambda: 2.5346
+    group_index: -0.33023
+  unavailable: [abbe, gvd, d]

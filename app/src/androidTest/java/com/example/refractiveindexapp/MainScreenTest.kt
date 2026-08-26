@@ -3,6 +3,7 @@ package com.example.refractiveindexapp
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.refractiveindexapp.parsing.MaterialModel
@@ -50,6 +51,7 @@ class MainScreenTest {
         composeTestRule.onNodeWithText("main  /  BaB2O4  /  Tamosauskas-e").assertIsDisplayed()
         composeTestRule.onNodeWithText("Dispersion").assertIsDisplayed()
         composeTestRule.onNodeWithText("Extinction coefficient").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Derived optical constants").performScrollTo().assertIsDisplayed()
     }
 
     private object SelectedMaterialRepository : MaterialRepository {
