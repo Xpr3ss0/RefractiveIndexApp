@@ -54,6 +54,13 @@ class OpticalDataProvider private constructor(
 
     fun hasFormulaModel(): Boolean = dispersionModel != null
 
+    fun refractiveIndexRange(): ClosedFloatingPointRange<Double>? = when (val model = dispersionModel) {
+        null -> tabulatedData?.takeIf { it.nArray != null && it.wavelengthArray.isNotEmpty() }?.let {
+            it.wavelengthArray.first()..it.wavelengthArray.last()
+        }
+        else -> model.wavelengthMin..model.wavelengthMax
+    }
+
     private fun modelValue(wavelength: Double): DerivedValue {
         val model = dispersionModel ?: return DerivedValue.unavailable("No dispersion model")
         if (wavelength !in model.wavelengthMin..model.wavelengthMax) {

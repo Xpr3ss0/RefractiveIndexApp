@@ -16,6 +16,9 @@ import com.example.refractiveindexapp.parsing.Page
 import com.example.refractiveindexapp.parsing.RemoteMaterialRepository
 import com.example.refractiveindexapp.physics.DerivedOpticalConstants
 import com.example.refractiveindexapp.physics.DerivedOpticalConstantsCalculator
+import com.example.refractiveindexapp.physics.FresnelCalculator
+import com.example.refractiveindexapp.physics.FresnelResult
+import com.example.refractiveindexapp.physics.OpticalDataProvider
 import dev.xpr3ss0.scientificplot.model.DataSeries
 import dev.xpr3ss0.scientificplot.model.SeriesPlot
 import dev.xpr3ss0.scientificplot.state.PlotManager
@@ -59,6 +62,18 @@ class MainViewModel(
     var derivedOpticalConstants by mutableStateOf<DerivedOpticalConstants?>(null)
         private set
 
+    var fresnelAngleText by mutableStateOf("0")
+        private set
+
+    var fresnelAngleError by mutableStateOf<String?>(null)
+        private set
+
+    var fresnelResult by mutableStateOf<FresnelResult?>(null)
+        private set
+
+    val wavelengthSliderRange: ClosedFloatingPointRange<Double>?
+        get() = currentMaterial?.let { OpticalDataProvider.from(it).refractiveIndexRange() }
+
     val dispersionPlotManager = PlotManager(PlotState.defaultFromEmpty()).apply {
         setAxisLabels(xLabel = "Wavelength (µm)", yLabel = "Refractive index")
     }
@@ -71,6 +86,7 @@ class MainViewModel(
             selectedPage = page
             currentMaterial = null
             derivedOpticalConstants = null
+            fresnelResult = null
             materialLoadState = MaterialLoadState.Loading
             clearPlots()
             materialRepository.load(page).fold(
@@ -78,6 +94,7 @@ class MainViewModel(
                     currentMaterial = material
                     updateOpticalPlots()
                     updateDerivedOpticalConstants()
+                    updateFresnel()
                     materialLoadState = MaterialLoadState.Loaded
                 },
                 onFailure = { throwable ->
@@ -96,6 +113,7 @@ class MainViewModel(
             materialLoadState = MaterialLoadState.Idle
             clearPlots()
             derivedOpticalConstants = null
+            fresnelResult = null
         }
         selectedBook = book
     }
@@ -108,6 +126,7 @@ class MainViewModel(
             materialLoadState = MaterialLoadState.Idle
             clearPlots()
             derivedOpticalConstants = null
+            fresnelResult = null
         }
         selectedShelf = shelf
     }
@@ -156,6 +175,12 @@ class MainViewModel(
     fun updateDerivedWavelength(value: String) {
         derivedWavelengthText = value
         updateDerivedOpticalConstants()
+        updateFresnel()
+    }
+
+    fun updateFresnelAngle(value: String) {
+        fresnelAngleText = value
+        updateFresnel()
     }
 
     private fun updateDerivedOpticalConstants() {
@@ -168,6 +193,24 @@ class MainViewModel(
         derivedWavelengthError = null
         derivedOpticalConstants = currentMaterial?.let {
             DerivedOpticalConstantsCalculator.calculate(it, wavelength)
+        }
+    }
+
+    private fun updateFresnel() {
+        val wavelength = derivedWavelengthText.replace(',', '.').toDoubleOrNull()
+        val angle = fresnelAngleText.replace(',', '.').toDoubleOrNull()
+        if (wavelength == null || !wavelength.isFinite() || wavelength <= 0.0) {
+            fresnelResult = null
+            return
+        }
+        if (angle == null || !angle.isFinite() || angle !in 0.0..<90.0) {
+            fresnelAngleError = "Enter an angle from 0° to below 90°"
+            fresnelResult = null
+            return
+        }
+        fresnelAngleError = null
+        fresnelResult = currentMaterial?.let {
+            FresnelCalculator.calculate(it, wavelength, angle)
         }
     }
 }

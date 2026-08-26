@@ -3,7 +3,15 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+val releaseVersion = providers.gradleProperty("releaseVersion").orElse("1.0.0-dev")
+val releaseVersionCode = providers.gradleProperty("releaseVersionCode").orElse("1")
+val releaseStoreFile = providers.environmentVariable("RELEASE_STORE_FILE")
+val releaseStorePassword = providers.environmentVariable("RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = providers.environmentVariable("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = providers.environmentVariable("RELEASE_KEY_PASSWORD")
+
 android {
+    // Keep the source namespace stable; the application ID is the public Android identity.
     namespace = "com.example.refractiveindexapp"
     compileSdk {
         version = release(37) {
@@ -12,17 +20,26 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.refractiveindexapp"
+        applicationId = "dev.xpr3ss0.refractiveindexapp"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = releaseVersionCode.get().toInt()
+        versionName = releaseVersion.get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(releaseStoreFile.orNull ?: "missing-release-keystore.jks")
+            storePassword = releaseStorePassword.orNull
+            keyAlias = releaseKeyAlias.orNull
+            keyPassword = releaseKeyPassword.orNull
+        }
+    }
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
@@ -34,6 +51,20 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+}
+
+tasks.matching { it.name == "validateSigningRelease" }.configureEach {
+    doFirst {
+        val missing = listOf(
+            "RELEASE_STORE_FILE" to releaseStoreFile.orNull,
+            "RELEASE_STORE_PASSWORD" to releaseStorePassword.orNull,
+            "RELEASE_KEY_ALIAS" to releaseKeyAlias.orNull,
+            "RELEASE_KEY_PASSWORD" to releaseKeyPassword.orNull
+        ).filter { it.second.isNullOrBlank() }.map { it.first }
+        check(missing.isEmpty()) {
+            "Release signing is not configured. Set: ${missing.joinToString()}."
+        }
     }
 }
 

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -14,20 +13,19 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.refractiveindexapp.parsing.MaterialModel
 import com.example.refractiveindexapp.ui.view.MainViewModel
 import com.example.refractiveindexapp.ui.view.MaterialLoadState
 import com.example.refractiveindexapp.physics.DerivedOpticalConstants
 import com.example.refractiveindexapp.physics.DerivedValue
+import com.example.refractiveindexapp.physics.FresnelResult
 import dev.xpr3ss0.scientificplot.ScientificPlot
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,6 +70,7 @@ fun MainScreen(
                 MaterialLoadState.Loaded -> viewModel.currentMaterial?.let { material ->
                     item { MaterialSummary(material) }
                     item { DerivedOpticalConstantsCard(viewModel) }
+                    item { FresnelReflectionCard(viewModel) }
                     item { DispersionPlotCard(viewModel) }
                     if (material.tabulatedData?.kArray != null) {
                         item { ExtinctionPlotCard(viewModel) }
@@ -188,19 +187,53 @@ private fun DerivedOpticalConstantsCard(viewModel: MainViewModel) {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text("Derived optical constants", style = MaterialTheme.typography.titleMedium)
-            OutlinedTextField(
+            NumericInputWithSlider(
                 value = viewModel.derivedWavelengthText,
                 onValueChange = viewModel::updateDerivedWavelength,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Wavelength (µm)") },
-                singleLine = true,
-                isError = viewModel.derivedWavelengthError != null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                supportingText = viewModel.derivedWavelengthError?.let { error -> { Text(error) } }
+                label = "Wavelength (µm)",
+                range = viewModel.wavelengthSliderRange,
+                error = viewModel.derivedWavelengthError,
+                unit = "µm"
             )
             if (constants != null) DerivedConstantsRows(constants)
         }
     }
+}
+
+@Composable
+private fun FresnelReflectionCard(viewModel: MainViewModel) {
+    Card {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("Fresnel reflection", style = MaterialTheme.typography.titleMedium)
+            Text("Air/vacuum → material · uses the wavelength above", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            NumericInputWithSlider(
+                value = viewModel.fresnelAngleText,
+                onValueChange = viewModel::updateFresnelAngle,
+                label = "Angle of incidence (°)",
+                range = 0.0..89.9,
+                error = viewModel.fresnelAngleError,
+                unit = "°"
+            )
+            viewModel.fresnelResult?.let { FresnelRows(it) }
+        }
+    }
+}
+
+@Composable
+private fun FresnelRows(result: FresnelResult) {
+    val entries = listOf(
+        "P-polarized reflectance Rp" to result.reflectanceP,
+        "S-polarized reflectance Rs" to result.reflectanceS,
+        "Unpolarized reflectance R" to result.reflectanceUnpolarized,
+        "P reflection phase (°)" to result.phasePDegrees,
+        "S reflection phase (°)" to result.phaseSDegrees,
+        "Brewster angle (°)" to result.brewsterAngleDegrees,
+        "Critical angle, material → air (°)" to result.reverseCriticalAngleDegrees
+    )
+    entries.forEach { (label, value) -> DerivedConstantRow(label, value) }
 }
 
 @Composable
