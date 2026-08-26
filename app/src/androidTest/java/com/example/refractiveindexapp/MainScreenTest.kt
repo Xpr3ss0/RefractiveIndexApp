@@ -41,7 +41,7 @@ class MainScreenTest {
         viewModel.selectPage(page)
 
         composeTestRule.setContent {
-            MainScreen(viewModel = viewModel, onAddMaterial = {}, onAbout = {})
+            MainScreen(viewModel = viewModel, onAddMaterial = {}, onAbout = {}, onSettings = {})
         }
 
         composeTestRule.waitUntil(timeoutMillis = 5_000) {

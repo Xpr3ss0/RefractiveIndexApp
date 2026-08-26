@@ -10,6 +10,8 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import com.example.refractiveindexapp.settings.ThemePreference
+import com.example.refractiveindexapp.settings.ColorSchemePreference
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -35,17 +37,27 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun RefractiveIndexAppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themePreference: ThemePreference = ThemePreference.System,
+    colorSchemePreference: ColorSchemePreference = ColorSchemePreference.System,
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themePreference) {
+        ThemePreference.System -> isSystemInDarkTheme()
+        ThemePreference.Light -> false
+        ThemePreference.Dark -> true
+    }
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        colorSchemePreference == ColorSchemePreference.System && dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
+        colorSchemePreference == ColorSchemePreference.Ocean && darkTheme -> darkColorScheme(primary = androidx.compose.ui.graphics.Color(0xFF89D0FF), secondary = androidx.compose.ui.graphics.Color(0xFFB8C8FF))
+        colorSchemePreference == ColorSchemePreference.Ocean -> lightColorScheme(primary = androidx.compose.ui.graphics.Color(0xFF006493), secondary = androidx.compose.ui.graphics.Color(0xFF405F90))
+        colorSchemePreference == ColorSchemePreference.Forest && darkTheme -> darkColorScheme(primary = androidx.compose.ui.graphics.Color(0xFF9CD49B), secondary = androidx.compose.ui.graphics.Color(0xFFB5C9A8))
+        colorSchemePreference == ColorSchemePreference.Forest -> lightColorScheme(primary = androidx.compose.ui.graphics.Color(0xFF276A2E), secondary = androidx.compose.ui.graphics.Color(0xFF4D6547))
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
