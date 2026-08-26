@@ -12,12 +12,12 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/ic_launcher_artwork"
         android:supportsRtl="true"
-        android:theme="@style/Theme.RefractiveIndexApp">
+        android:theme="@style/Theme.IndexInfo">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.RefractiveIndexApp"
+            android:theme="@style/Theme.IndexInfo"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

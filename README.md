@@ -1,4 +1,4 @@
-# Refractive Index
+# Index Info
 
 A mobile-first Android interface for refractiveindex.info data. It provides material selection, dispersion and extinction-coefficient plots, derived optical constants, and a Fresnel calculator.
 

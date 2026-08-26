@@ -47,7 +47,7 @@ fun AboutScreen() {
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text("Refractive Index", style = MaterialTheme.typography.titleLarge)
+                        Text("Index Info", style = MaterialTheme.typography.titleLarge)
                         Text(
                             "A mobile-first interface for exploring refractive-index data and optical calculations.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant

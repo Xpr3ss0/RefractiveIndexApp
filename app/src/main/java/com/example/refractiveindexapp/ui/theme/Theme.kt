@@ -36,7 +36,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun RefractiveIndexAppTheme(
+fun IndexInfoTheme(
     themePreference: ThemePreference = ThemePreference.System,
     colorSchemePreference: ColorSchemePreference = ColorSchemePreference.System,
     // Dynamic color is available on Android 12+

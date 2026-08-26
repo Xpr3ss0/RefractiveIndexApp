@@ -163,7 +163,9 @@ private fun <T> CataloguePickerSheet(
                             Text(entryTitle(entry), style = MaterialTheme.typography.titleSmall)
                             DatabaseRichText(
                                 text = entrySubtitle(entry),
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 2.dp, bottom = 2.dp),
                                 maxLines = 2,
                                 linksEnabled = false,
                                 onClick = { onSelected(entry) }

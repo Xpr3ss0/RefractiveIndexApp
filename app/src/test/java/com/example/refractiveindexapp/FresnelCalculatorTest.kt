@@ -41,16 +41,15 @@ class FresnelCalculatorTest {
     }
 
     @Test
-    fun `absorbing material returns a Brewster approximation with warning`() {
+    fun `absorbing material returns characteristic-angle approximations with one warning`() {
         val result = FresnelCalculator.calculate(material(1.5, 0.2), 0.5, 30.0)
 
         assertTrue(result.reflectanceP.isAvailable)
         assertTrue(result.brewsterAngleDegrees.isAvailable)
         assertEquals(atan(1.5) * 180.0 / Math.PI, result.brewsterAngleDegrees.value!!, 1e-10)
-        assertTrue(result.brewsterAngleWarning?.contains("lossless approximation") == true)
         assertTrue(result.reverseCriticalAngleDegrees.isAvailable)
         assertEquals(asin(1.0 / 1.5) * 180.0 / Math.PI, result.reverseCriticalAngleDegrees.value!!, 1e-10)
-        assertTrue(result.criticalAngleWarning?.contains("lossless approximation") == true)
+        assertTrue(result.characteristicAnglesWarning?.contains("lossless approximations") == true)
     }
 
     @Test
@@ -58,9 +57,8 @@ class FresnelCalculatorTest {
         val result = FresnelCalculator.calculate(material(1.5, 1e-6), 0.5, 30.0)
 
         assertTrue(result.brewsterAngleDegrees.isAvailable)
-        assertEquals(null, result.brewsterAngleWarning)
         assertTrue(result.reverseCriticalAngleDegrees.isAvailable)
-        assertEquals(null, result.criticalAngleWarning)
+        assertEquals(null, result.characteristicAnglesWarning)
     }
 
     @Test
