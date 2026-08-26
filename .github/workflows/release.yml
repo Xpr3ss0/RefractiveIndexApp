@@ -71,7 +71,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          apk="release-assets/RefractiveIndexApp-v${VERSION}.apk"
+          apk="release-assets/IndexInfo-v${VERSION}.apk"
           cp app/build/outputs/apk/release/app-release.apk "$apk"
           sha256sum "$apk" > "${apk}.sha256"
 
@@ -81,5 +81,5 @@ jobs:
         run: >-
           gh release create "$GITHUB_REF_NAME"
           release-assets/*
-          --title "Refractive Index ${{ steps.version.outputs.version }}"
+          --title "Index Info ${{ steps.version.outputs.version }}"
           --generate-notes

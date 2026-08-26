@@ -45,7 +45,7 @@ fun MainScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Refractive index") },
+                title = { Text("Index Info") },
                 actions = {
                     TextButton(onClick = onSettings) {
                         Text("Settings")
@@ -319,6 +319,13 @@ private fun FresnelRows(result: FresnelResult) {
         "Critical angle, material → air (°)" to result.reverseCriticalAngleDegrees
     )
     entries.forEach { (label, value) -> DerivedConstantRow(label, value) }
+    result.characteristicAnglesWarning?.let { warning ->
+        Text(
+            warning,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
 }
 
 @Composable

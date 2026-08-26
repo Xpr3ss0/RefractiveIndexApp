@@ -20,7 +20,8 @@ data class FresnelResult(
     val phasePDegrees: DerivedValue,
     val phaseSDegrees: DerivedValue,
     val brewsterAngleDegrees: DerivedValue,
-    val reverseCriticalAngleDegrees: DerivedValue
+    val reverseCriticalAngleDegrees: DerivedValue,
+    val characteristicAnglesWarning: String? = null
 )
 
 private data class Complex(val real: Double, val imaginary: Double) {
@@ -49,7 +50,8 @@ private data class Complex(val real: Double, val imaginary: Double) {
 }
 
 object FresnelCalculator {
-    private const val LOSSLESS_K_TOLERANCE = 1e-10
+    /** Above this, lossless critical- and Brewster-angle expressions are approximations. */
+    private const val ANGLE_WARNING_K_THRESHOLD = 1e-3
 
     fun calculate(material: MaterialModel, wavelengthMicrometres: Double, incidenceAngleDegrees: Double): FresnelResult {
         if (!wavelengthMicrometres.isFinite() || wavelengthMicrometres <= 0.0) {
@@ -73,14 +75,16 @@ object FresnelCalculator {
         val rp = (targetIndex * incidentCosine - cosTransmitted) / (targetIndex * incidentCosine + cosTransmitted)
         val reflectanceP = DerivedValue(rp.magnitudeSquared())
         val reflectanceS = DerivedValue(rs.magnitudeSquared())
-        val lossless = abs(k) <= LOSSLESS_K_TOLERANCE
-        val brewster = if (lossless && n > 0.0) DerivedValue(atan(n) * 180.0 / PI) else DerivedValue.unavailable("Brewster angle requires a lossless material")
-        val critical = if (!lossless) {
-            DerivedValue.unavailable("Critical angle requires a lossless material")
-        } else if (n < 1.0) {
+        val brewster = if (n > 0.0) DerivedValue(atan(n) * 180.0 / PI) else DerivedValue.unavailable("Material index must be positive")
+        val critical = if (n < 1.0) {
             DerivedValue.unavailable("Material index must be at least 1")
         } else {
             DerivedValue(asin(1.0 / n) * 180.0 / PI)
+        }
+        val characteristicAnglesWarning = if (abs(k) > ANGLE_WARNING_K_THRESHOLD) {
+            "k = ${"%.3g".format(java.util.Locale.US, k)} here; Brewster and critical angles use lossless approximations."
+        } else {
+            null
         }
         return FresnelResult(
             wavelengthMicrometres,
@@ -91,12 +95,13 @@ object FresnelCalculator {
             DerivedValue(rp.phaseDegrees()),
             DerivedValue(rs.phaseDegrees()),
             brewster,
-            critical
+            critical,
+            characteristicAnglesWarning
         )
     }
 
     private fun unavailable(wavelength: Double, angle: Double, reason: String): FresnelResult {
         val unavailable = DerivedValue.unavailable(reason)
-        return FresnelResult(wavelength, angle, unavailable, unavailable, unavailable, unavailable, unavailable, unavailable, unavailable)
+        return FresnelResult(wavelength, angle, unavailable, unavailable, unavailable, unavailable, unavailable, unavailable, unavailable, null)
     }
 }

@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "RefractiveIndexApp"
+rootProject.name = "IndexInfo"
 include(":app")
 include(":scientificPlot")
