@@ -48,7 +48,9 @@ class FresnelCalculatorTest {
         assertTrue(result.brewsterAngleDegrees.isAvailable)
         assertEquals(atan(1.5) * 180.0 / Math.PI, result.brewsterAngleDegrees.value!!, 1e-10)
         assertTrue(result.brewsterAngleWarning?.contains("lossless approximation") == true)
-        assertFalse(result.reverseCriticalAngleDegrees.isAvailable)
+        assertTrue(result.reverseCriticalAngleDegrees.isAvailable)
+        assertEquals(asin(1.0 / 1.5) * 180.0 / Math.PI, result.reverseCriticalAngleDegrees.value!!, 1e-10)
+        assertTrue(result.criticalAngleWarning?.contains("lossless approximation") == true)
     }
 
     @Test
@@ -57,6 +59,8 @@ class FresnelCalculatorTest {
 
         assertTrue(result.brewsterAngleDegrees.isAvailable)
         assertEquals(null, result.brewsterAngleWarning)
+        assertTrue(result.reverseCriticalAngleDegrees.isAvailable)
+        assertEquals(null, result.criticalAngleWarning)
     }
 
     @Test

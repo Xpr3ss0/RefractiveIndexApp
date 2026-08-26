@@ -21,7 +21,8 @@ data class FresnelResult(
     val phaseSDegrees: DerivedValue,
     val brewsterAngleDegrees: DerivedValue,
     val brewsterAngleWarning: String? = null,
-    val reverseCriticalAngleDegrees: DerivedValue
+    val reverseCriticalAngleDegrees: DerivedValue,
+    val criticalAngleWarning: String? = null
 )
 
 private data class Complex(val real: Double, val imaginary: Double) {
@@ -50,9 +51,8 @@ private data class Complex(val real: Double, val imaginary: Double) {
 }
 
 object FresnelCalculator {
-    private const val LOSSLESS_K_TOLERANCE = 1e-10
-    /** Above this, the lossless Brewster-angle expression is only an approximation. */
-    private const val BREWSTER_WARNING_K_THRESHOLD = 1e-3
+    /** Above this, lossless critical- and Brewster-angle expressions are approximations. */
+    private const val ANGLE_WARNING_K_THRESHOLD = 1e-3
 
     fun calculate(material: MaterialModel, wavelengthMicrometres: Double, incidenceAngleDegrees: Double): FresnelResult {
         if (!wavelengthMicrometres.isFinite() || wavelengthMicrometres <= 0.0) {
@@ -76,19 +76,21 @@ object FresnelCalculator {
         val rp = (targetIndex * incidentCosine - cosTransmitted) / (targetIndex * incidentCosine + cosTransmitted)
         val reflectanceP = DerivedValue(rp.magnitudeSquared())
         val reflectanceS = DerivedValue(rs.magnitudeSquared())
-        val lossless = abs(k) <= LOSSLESS_K_TOLERANCE
         val brewster = if (n > 0.0) DerivedValue(atan(n) * 180.0 / PI) else DerivedValue.unavailable("Material index must be positive")
-        val brewsterWarning = if (abs(k) > BREWSTER_WARNING_K_THRESHOLD) {
+        val brewsterWarning = if (abs(k) > ANGLE_WARNING_K_THRESHOLD) {
             "k = ${"%.3g".format(java.util.Locale.US, k)} here; the Brewster angle uses the lossless approximation."
         } else {
             null
         }
-        val critical = if (!lossless) {
-            DerivedValue.unavailable("Critical angle requires a lossless material")
-        } else if (n < 1.0) {
+        val critical = if (n < 1.0) {
             DerivedValue.unavailable("Material index must be at least 1")
         } else {
             DerivedValue(asin(1.0 / n) * 180.0 / PI)
+        }
+        val criticalWarning = if (critical.isAvailable && abs(k) > ANGLE_WARNING_K_THRESHOLD) {
+            "k = ${"%.3g".format(java.util.Locale.US, k)} here; the critical angle uses the lossless approximation."
+        } else {
+            null
         }
         return FresnelResult(
             wavelengthMicrometres,
@@ -100,12 +102,13 @@ object FresnelCalculator {
             DerivedValue(rs.phaseDegrees()),
             brewster,
             brewsterWarning,
-            critical
+            critical,
+            criticalWarning
         )
     }
 
     private fun unavailable(wavelength: Double, angle: Double, reason: String): FresnelResult {
         val unavailable = DerivedValue.unavailable(reason)
-        return FresnelResult(wavelength, angle, unavailable, unavailable, unavailable, unavailable, unavailable, unavailable, null, unavailable)
+        return FresnelResult(wavelength, angle, unavailable, unavailable, unavailable, unavailable, unavailable, unavailable, null, unavailable, null)
     }
 }

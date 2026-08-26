@@ -326,6 +326,13 @@ private fun FresnelRows(result: FresnelResult) {
             style = MaterialTheme.typography.bodySmall
         )
     }
+    result.criticalAngleWarning?.let { warning ->
+        Text(
+            warning,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
 }
 
 @Composable
