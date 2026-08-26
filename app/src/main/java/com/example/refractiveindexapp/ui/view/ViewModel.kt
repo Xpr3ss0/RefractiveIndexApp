@@ -139,6 +139,9 @@ class MainViewModel(
     val extinctionPlotManager = PlotManager(PlotState.defaultFromEmpty()).apply {
         setAxisLabels(xLabel = "Wavelength (µm)", yLabel = "Extinction coefficient k")
     }
+    val fresnelPlotManager = PlotManager(PlotState.defaultFromEmpty()).apply {
+        setAxisLabels(xLabel = "Angle of incidence (°)", yLabel = "Reflectance")
+    }
 
     fun refreshCatalogue() {
         val repository = catalogueRepository ?: return
@@ -308,6 +311,7 @@ class MainViewModel(
     private fun clearPlots() {
         dispersionPlotManager.clearPlot()
         extinctionPlotManager.clearPlot()
+        fresnelPlotManager.clearPlot()
     }
 
     fun updateDerivedWavelength(value: String) {
@@ -339,16 +343,52 @@ class MainViewModel(
         val angle = fresnelAngleText.replace(',', '.').toDoubleOrNull()
         if (wavelength == null || !wavelength.isFinite() || wavelength <= 0.0) {
             fresnelResult = null
+            fresnelPlotManager.clearPlot()
             return
         }
         if (angle == null || !angle.isFinite() || angle !in 0.0..<90.0) {
             fresnelAngleError = "Enter an angle from 0° to below 90°"
             fresnelResult = null
+            fresnelPlotManager.clearPlot()
             return
         }
         fresnelAngleError = null
         fresnelResult = currentMaterial?.let {
             FresnelCalculator.calculate(it, wavelength, angle)
+        }
+        updateFresnelPlot(wavelength)
+    }
+
+    private fun updateFresnelPlot(wavelength: Double) {
+        fresnelPlotManager.clearPlot()
+        val material = currentMaterial ?: return
+        val angles = (0..360).map { it * 89.9 / 360.0 }
+        val results = angles.map { angle ->
+            angle to FresnelCalculator.calculate(material, wavelength, angle)
+        }
+        val pPoints = results.mapNotNull { (angle, result) ->
+            result.reflectanceP.value?.takeIf { it.isFinite() }?.let { angle to it }
+        }
+        val sPoints = results.mapNotNull { (angle, result) ->
+            result.reflectanceS.value?.takeIf { it.isFinite() }?.let { angle to it }
+        }
+        if (pPoints.size >= 2) {
+            fresnelPlotManager.addPlot(
+                SeriesPlot.linePlot(
+                    dataSeries = DataSeries(pPoints.map { it.first }, pPoints.map { it.second }),
+                    name = "Rp",
+                    color = Color(0xFF1565C0)
+                )
+            )
+        }
+        if (sPoints.size >= 2) {
+            fresnelPlotManager.addPlot(
+                SeriesPlot.linePlot(
+                    dataSeries = DataSeries(sPoints.map { it.first }, sPoints.map { it.second }),
+                    name = "Rs",
+                    color = Color(0xFFC62828)
+                )
+            )
         }
     }
 }

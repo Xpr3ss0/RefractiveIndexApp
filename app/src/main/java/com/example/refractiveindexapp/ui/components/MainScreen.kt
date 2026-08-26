@@ -111,15 +111,15 @@ fun MainScreen(
                     }
                 }
                 MaterialLoadState.Loaded -> viewModel.currentMaterial?.let { material ->
-                    viewModel.materialAbout?.let { about ->
-                        item { MaterialAboutCard(about) }
-                    }
                     item { MaterialSummary(material) }
-                    item { DerivedOpticalConstantsCard(viewModel, settings.hideUnavailableConstants) }
-                    item { FresnelReflectionCard(viewModel) }
                     item { DispersionPlotCard(viewModel) }
                     if (material.tabulatedData?.kArray != null) {
                         item { ExtinctionPlotCard(viewModel) }
+                    }
+                    item { DerivedOpticalConstantsCard(viewModel, settings.hideUnavailableConstants) }
+                    item { FresnelReflectionCard(viewModel) }
+                    viewModel.materialAbout?.let { about ->
+                        item { MaterialAboutCard(about) }
                     }
                     material.references?.let { references ->
                         item { ReferenceCard(references) }
@@ -170,7 +170,7 @@ private fun MaterialHeader(
     onChooseMaterial: () -> Unit,
     catalogueLoadState: CatalogueLoadState
 ) {
-    Card {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -294,6 +294,15 @@ private fun FresnelReflectionCard(viewModel: MainViewModel) {
                 unit = "°"
             )
             viewModel.fresnelResult?.let { FresnelRows(it) }
+            if (viewModel.fresnelPlotManager.plotState.plotEntities.isNotEmpty()) {
+                PlotCardHeader("Rp and Rs", viewModel.fresnelPlotManager::resetViewport)
+                ScientificPlot(viewModel.fresnelPlotManager)
+                Text(
+                    "Reflectance versus angle of incidence. Pinch to zoom, drag to pan, tap for values.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
