@@ -17,3 +17,5 @@ Please cite the database when using data obtained through the app:
 `app/src/main/assets/catalog-nk.yml` is a copy of the upstream catalogue and retains its upstream CC0 header. It entered this repository on 2026-07-26. The original upstream revision was not recorded at that time.
 
 Future catalogue updates must record the upstream Git commit or release tag, retrieval date, and SHA-256 hash in this document. Runtime material records are fetched from the upstream repository; their per-record references remain visible in the application.
+
+The application defaults to the upstream `main` branch to retrieve the newest catalogue and material records. The data-acquisition API also accepts an immutable upstream Git commit SHA when a reproducible catalogue/data pair is required.

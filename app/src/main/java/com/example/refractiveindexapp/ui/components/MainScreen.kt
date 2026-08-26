@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.refractiveindexapp.parsing.MaterialModel
 import com.example.refractiveindexapp.ui.view.MainViewModel
+import com.example.refractiveindexapp.ui.view.CatalogueLoadState
 import com.example.refractiveindexapp.ui.view.MaterialLoadState
 import com.example.refractiveindexapp.physics.DerivedOpticalConstants
 import com.example.refractiveindexapp.physics.DerivedValue
@@ -61,8 +62,35 @@ fun MainScreen(
                     selection = viewModel.selectedPage?.let {
                         "${it.parentBook.parentShelf.id}  /  ${it.parentBook.id}  /  ${it.id}"
                     },
-                    onChooseMaterial = onAddMaterial
+                    onChooseMaterial = onAddMaterial,
+                    catalogueLoadState = viewModel.catalogueLoadState
                 )
+            }
+            when (val catalogueState = viewModel.catalogueLoadState) {
+                CatalogueLoadState.Loading -> item {
+                    Card {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("Updating material catalogue…", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "Downloading the current refractiveindex.info catalogue.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 12.dp))
+                        }
+                    }
+                }
+                is CatalogueLoadState.UsingBundledCatalogue -> item {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Using bundled catalogue", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                catalogueState.message,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+                else -> Unit
             }
             when (val loadState = viewModel.materialLoadState) {
                 MaterialLoadState.Idle -> item { EmptyMaterialState() }
@@ -103,7 +131,11 @@ fun MainScreen(
 }
 
 @Composable
-private fun MaterialHeader(selection: String?, onChooseMaterial: () -> Unit) {
+private fun MaterialHeader(
+    selection: String?,
+    onChooseMaterial: () -> Unit,
+    catalogueLoadState: CatalogueLoadState
+) {
     Card {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -114,7 +146,10 @@ private fun MaterialHeader(selection: String?, onChooseMaterial: () -> Unit) {
                 text = selection ?: "Choose a material from the refractiveindex.info catalogue.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Button(onClick = onChooseMaterial) {
+            Button(
+                onClick = onChooseMaterial,
+                enabled = catalogueLoadState !is CatalogueLoadState.Loading
+            ) {
                 Text(if (selection == null) "Choose material" else "Change material")
             }
         }

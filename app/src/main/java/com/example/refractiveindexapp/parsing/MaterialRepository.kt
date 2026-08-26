@@ -6,11 +6,13 @@ interface MaterialRepository {
 }
 
 class RemoteMaterialRepository(
-    private val parser: MaterialParser = MaterialParser()
+    private val parser: MaterialParser = MaterialParser(),
+    private val revision: DatabaseRevision = DatabaseRevision.Latest,
+    private val downloader: suspend (String) -> String? = ::downloadText
 ) : MaterialRepository {
     override suspend fun load(page: Page): Result<MaterialModel> = runCatching {
-        val url = "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/master/database/data/${page.dataPath}"
-        val text = downloadText(url) ?: error("Could not download this material.")
+        val text = downloader(RefractiveIndexDatabase.materialUrl(page.dataPath, revision))
+            ?: error("Could not download this material.")
         parser.parse(text) ?: error("The material file could not be read.")
     }
 }

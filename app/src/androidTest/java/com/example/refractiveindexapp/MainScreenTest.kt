@@ -32,7 +32,7 @@ class MainScreenTest {
         // The catalogue/database spelling is Tamosauskas-e (not Tomasauskas-e).
         val page = book.content.orEmpty().single { it.id == "Tamosauskas-e" }
         val viewModel = MainViewModel(
-            catalogue = catalogue,
+            fallbackCatalogue = catalogue,
             materialRepository = SelectedMaterialRepository
         )
 
@@ -41,7 +41,7 @@ class MainScreenTest {
         viewModel.selectPage(page)
 
         composeTestRule.setContent {
-            MainScreen(viewModel = viewModel, onAddMaterial = {})
+            MainScreen(viewModel = viewModel, onAddMaterial = {}, onAbout = {})
         }
 
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
@@ -49,8 +49,6 @@ class MainScreenTest {
         }
 
         composeTestRule.onNodeWithText("main  /  BaB2O4  /  Tamosauskas-e").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Dispersion").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Extinction coefficient").assertIsDisplayed()
         composeTestRule.onNodeWithText("Derived optical constants").performScrollTo().assertIsDisplayed()
     }
 

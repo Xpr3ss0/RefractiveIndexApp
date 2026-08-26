@@ -1,7 +1,11 @@
 package com.example.refractiveindexapp.ui.view
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.referentialEqualityPolicy
 import com.example.refractiveindexapp.parsing.Catalogue
+import com.example.refractiveindexapp.parsing.CatalogueRepository
+import com.example.refractiveindexapp.parsing.DatabaseRevision
+import com.example.refractiveindexapp.parsing.RemoteCatalogueRepository
 import com.example.refractiveindexapp.parsing.Shelf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -32,10 +36,33 @@ sealed interface MaterialLoadState {
     data class Failed(val message: String) : MaterialLoadState
 }
 
+sealed interface CatalogueLoadState {
+    data object Ready : CatalogueLoadState
+    data object Loading : CatalogueLoadState
+    data object Loaded : CatalogueLoadState
+    data class UsingBundledCatalogue(val message: String) : CatalogueLoadState
+}
+
 class MainViewModel(
-    val catalogue: Catalogue,
-    private val materialRepository: MaterialRepository = RemoteMaterialRepository()
+    fallbackCatalogue: Catalogue,
+    private val materialRepository: MaterialRepository = RemoteMaterialRepository(),
+    private val catalogueRepository: CatalogueRepository? = null,
+    private val databaseRevision: DatabaseRevision = DatabaseRevision.Latest
 ) : ViewModel() {
+
+    // Catalogue entries link back to their parent shelf/book, forming a cyclic graph.
+    // Structural equality would recurse through that graph when a refreshed catalogue is assigned.
+    var catalogue by mutableStateOf(fallbackCatalogue, referentialEqualityPolicy())
+        private set
+
+    var catalogueLoadState by mutableStateOf<CatalogueLoadState>(
+        if (catalogueRepository == null) CatalogueLoadState.Ready else CatalogueLoadState.Loading
+    )
+        private set
+
+    init {
+        if (catalogueRepository != null) refreshCatalogue()
+    }
 
     var selectedShelf by mutableStateOf<Shelf?>(null)
         private set
@@ -81,6 +108,25 @@ class MainViewModel(
         setAxisLabels(xLabel = "Wavelength (µm)", yLabel = "Extinction coefficient k")
     }
 
+    fun refreshCatalogue() {
+        val repository = catalogueRepository ?: return
+        viewModelScope.launch {
+            catalogueLoadState = CatalogueLoadState.Loading
+            repository.load(databaseRevision).fold(
+                onSuccess = { downloadedCatalogue ->
+                    catalogue = downloadedCatalogue
+                    clearSelection()
+                    catalogueLoadState = CatalogueLoadState.Loaded
+                },
+                onFailure = { throwable ->
+                    catalogueLoadState = CatalogueLoadState.UsingBundledCatalogue(
+                        throwable.message ?: "Could not update the material catalogue."
+                    )
+                }
+            )
+        }
+    }
+
     fun selectPage(page: Page) {
         viewModelScope.launch {
             selectedPage = page
@@ -116,6 +162,17 @@ class MainViewModel(
             fresnelResult = null
         }
         selectedBook = book
+    }
+
+    private fun clearSelection() {
+        selectedShelf = null
+        selectedBook = null
+        selectedPage = null
+        currentMaterial = null
+        materialLoadState = MaterialLoadState.Idle
+        derivedOpticalConstants = null
+        fresnelResult = null
+        clearPlots()
     }
 
     fun selectShelf(shelf: Shelf) {
@@ -216,8 +273,10 @@ class MainViewModel(
 }
 
 class MainViewModelFactory(
-    private val catalogue: Catalogue,
-    private val materialRepository: MaterialRepository = RemoteMaterialRepository()
+    private val fallbackCatalogue: Catalogue,
+    private val databaseRevision: DatabaseRevision = DatabaseRevision.Latest,
+    private val materialRepository: MaterialRepository = RemoteMaterialRepository(revision = databaseRevision),
+    private val catalogueRepository: CatalogueRepository = RemoteCatalogueRepository()
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(
@@ -226,7 +285,12 @@ class MainViewModelFactory(
 
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return MainViewModel(catalogue, materialRepository) as T
+            return MainViewModel(
+                fallbackCatalogue = fallbackCatalogue,
+                materialRepository = materialRepository,
+                catalogueRepository = catalogueRepository,
+                databaseRevision = databaseRevision
+            ) as T
         }
 
         throw IllegalArgumentException("Unknown ViewModel class")
