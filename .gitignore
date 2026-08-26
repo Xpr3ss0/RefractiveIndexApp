@@ -19,3 +19,4 @@ local.properties
 keystore.properties
 app/release-keystore.jks
 app/release-signing.properties
+refractive-index-release.jks

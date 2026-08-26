@@ -54,20 +54,6 @@ android {
     }
 }
 
-tasks.matching { it.name == "validateSigningRelease" }.configureEach {
-    doFirst {
-        val missing = listOf(
-            "RELEASE_STORE_FILE" to releaseStoreFile.orNull,
-            "RELEASE_STORE_PASSWORD" to releaseStorePassword.orNull,
-            "RELEASE_KEY_ALIAS" to releaseKeyAlias.orNull,
-            "RELEASE_KEY_PASSWORD" to releaseKeyPassword.orNull
-        ).filter { it.second.isNullOrBlank() }.map { it.first }
-        check(missing.isEmpty()) {
-            "Release signing is not configured. Set: ${missing.joinToString()}."
-        }
-    }
-}
-
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
