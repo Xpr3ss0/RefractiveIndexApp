@@ -288,7 +288,7 @@ class MainViewModel(
             it.tabulatedData?.let { tabulated ->
                 tabulated.nArray?.let { values ->
                     dispersionPlotManager.addPlot(
-                        SeriesPlot.dashedPlot(
+                        SeriesPlot.linePlot(
                             DataSeries(tabulated.wavelengthArray, values),
                             name = "tabulated n",
                             color = Color(0xFF00897B)
@@ -297,7 +297,7 @@ class MainViewModel(
                 }
                 tabulated.kArray?.let { values ->
                     extinctionPlotManager.addPlot(
-                        SeriesPlot.dashedPlot(
+                        SeriesPlot.linePlot(
                             DataSeries(tabulated.wavelengthArray, values),
                             name = "tabulated k",
                             color = Color(0xFFAD1457)
