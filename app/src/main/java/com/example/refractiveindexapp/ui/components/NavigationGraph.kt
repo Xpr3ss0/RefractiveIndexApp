@@ -1,10 +1,6 @@
 package com.example.refractiveindexapp.ui.components
 
-import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCompositionContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -30,6 +26,9 @@ fun AppNavigation(
                 viewModel = viewModel,
                 onAddMaterial = {
                     navController.navigate("addMaterial")
+                },
+                onAbout = {
+                    navController.navigate("about")
                 }
             )
         }
@@ -44,6 +43,9 @@ fun AppNavigation(
                 }
             )
         }
+
+        composable("about") {
+            AboutScreen()
+        }
     }
 }
-

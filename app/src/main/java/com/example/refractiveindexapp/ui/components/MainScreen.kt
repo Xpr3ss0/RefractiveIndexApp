@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -32,12 +33,18 @@ import dev.xpr3ss0.scientificplot.ScientificPlot
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
-    onAddMaterial: () -> Unit
+    onAddMaterial: () -> Unit,
+    onAbout: () -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Refractive index") },
+                actions = {
+                    TextButton(onClick = onAbout) {
+                        Text("About")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
