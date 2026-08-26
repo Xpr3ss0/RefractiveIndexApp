@@ -31,6 +31,10 @@ class DatabaseRepositoryTest {
             RefractiveIndexDatabase.materialUrl("main/SiO2/nk/Malitson.yml", revision)
                 .contains("/0123456789abcdef/")
         )
+        assertEquals(
+            "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/0123456789abcdef/database/data/main/SiO2/about.yml",
+            RefractiveIndexDatabase.materialAboutUrl("main/SiO2/nk/Malitson.yml", revision)
+        )
     }
 
     @Test

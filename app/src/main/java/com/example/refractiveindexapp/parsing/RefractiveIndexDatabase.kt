@@ -33,6 +33,24 @@ object RefractiveIndexDatabase {
         revision: DatabaseRevision = DatabaseRevision.Latest
     ): String = "$RawDatabaseBaseUrl/${revision.gitRef}/database/data/$dataPath"
 
+    /**
+     * Returns the `about.yml` shared by all optical-data pages for a material.
+     *
+     * Page files live below a data-kind directory, for example
+     * `main/BaB2O4/nk/Tamosauskas-e.yml`; the associated description lives at
+     * `main/BaB2O4/about.yml`.
+     */
+    fun materialAboutUrl(
+        dataPath: String,
+        revision: DatabaseRevision = DatabaseRevision.Latest
+    ): String {
+        val dataKindDirectory = dataPath.substringBeforeLast('/', missingDelimiterValue = "")
+        require(dataKindDirectory.isNotEmpty()) { "A material data path must include a file name." }
+        val materialDirectory = dataKindDirectory.substringBeforeLast('/', missingDelimiterValue = "")
+        require(materialDirectory.isNotEmpty()) { "A material data path must include a data-kind directory." }
+        return "$RawDatabaseBaseUrl/${revision.gitRef}/database/data/$materialDirectory/about.yml"
+    }
+
     val currentCommitUrl: String =
         "https://api.github.com/repos/polyanskiy/refractiveindex.info-database/commits/main"
 }

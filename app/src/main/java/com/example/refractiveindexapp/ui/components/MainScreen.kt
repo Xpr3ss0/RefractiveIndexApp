@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.refractiveindexapp.parsing.MaterialModel
+import com.example.refractiveindexapp.parsing.MaterialAbout
 import com.example.refractiveindexapp.ui.view.MainViewModel
 import com.example.refractiveindexapp.ui.view.CatalogueLoadState
 import com.example.refractiveindexapp.ui.view.MaterialLoadState
@@ -110,6 +111,9 @@ fun MainScreen(
                     }
                 }
                 MaterialLoadState.Loaded -> viewModel.currentMaterial?.let { material ->
+                    viewModel.materialAbout?.let { about ->
+                        item { MaterialAboutCard(about) }
+                    }
                     item { MaterialSummary(material) }
                     item { DerivedOpticalConstantsCard(viewModel, settings.hideUnavailableConstants) }
                     item { FresnelReflectionCard(viewModel) }
@@ -131,6 +135,29 @@ fun MainScreen(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MaterialAboutCard(about: MaterialAbout) {
+    Card {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("About material", style = MaterialTheme.typography.titleMedium)
+            if (about.names.isNotEmpty()) {
+                Text("Also known as", style = MaterialTheme.typography.labelLarge)
+                about.names.forEach { DatabaseRichText(it) }
+            }
+            about.description?.let { DatabaseRichText(it, modifier = Modifier.fillMaxWidth()) }
+            if (about.links.isNotEmpty()) {
+                Text("Links", style = MaterialTheme.typography.labelLarge)
+                about.links.forEach { link ->
+                    DatabaseRichText("[${link.text ?: link.url}](${link.url})")
                 }
             }
         }

@@ -16,8 +16,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.refractiveindexapp.parsing.Book
 import com.example.refractiveindexapp.parsing.MaterialModel
+import com.example.refractiveindexapp.parsing.MaterialAbout
+import com.example.refractiveindexapp.parsing.MaterialAboutRepository
 import com.example.refractiveindexapp.parsing.MaterialRepository
 import com.example.refractiveindexapp.parsing.Page
+import com.example.refractiveindexapp.parsing.RemoteMaterialAboutRepository
 import com.example.refractiveindexapp.parsing.RemoteMaterialRepository
 import com.example.refractiveindexapp.physics.DerivedOpticalConstants
 import com.example.refractiveindexapp.physics.DerivedOpticalConstantsCalculator
@@ -49,9 +52,17 @@ sealed interface CatalogueLoadState {
     data class UsingBundledCatalogue(val message: String) : CatalogueLoadState
 }
 
+sealed interface MaterialAboutLoadState {
+    data object Idle : MaterialAboutLoadState
+    data object Loading : MaterialAboutLoadState
+    data object Loaded : MaterialAboutLoadState
+    data object Unavailable : MaterialAboutLoadState
+}
+
 class MainViewModel(
     fallbackCatalogue: Catalogue,
     private val materialRepository: MaterialRepository = RemoteMaterialRepository(),
+    private val materialAboutRepository: MaterialAboutRepository = RemoteMaterialAboutRepository(),
     private val catalogueRepository: CatalogueRepository? = null,
     private val databaseRevision: DatabaseRevision = DatabaseRevision.Latest,
     private val settingsRepository: SettingsRepository = InMemorySettingsRepository()
@@ -93,6 +104,12 @@ class MainViewModel(
         private set
 
     var materialLoadState by mutableStateOf<MaterialLoadState>(MaterialLoadState.Idle)
+        private set
+
+    var materialAbout by mutableStateOf<MaterialAbout?>(null)
+        private set
+
+    var materialAboutLoadState by mutableStateOf<MaterialAboutLoadState>(MaterialAboutLoadState.Idle)
         private set
 
     var derivedWavelengthText by mutableStateOf("0.5876")
@@ -170,6 +187,8 @@ class MainViewModel(
         viewModelScope.launch {
             selectedPage = page
             currentMaterial = null
+            materialAbout = null
+            materialAboutLoadState = MaterialAboutLoadState.Loading
             derivedOpticalConstants = null
             fresnelResult = null
             materialLoadState = MaterialLoadState.Loading
@@ -189,12 +208,31 @@ class MainViewModel(
                 }
             )
         }
+        viewModelScope.launch {
+            materialAboutRepository.load(page).fold(
+                onSuccess = { about ->
+                    if (selectedPage == page) {
+                        materialAbout = about
+                        materialAboutLoadState = if (about == null) {
+                            MaterialAboutLoadState.Unavailable
+                        } else {
+                            MaterialAboutLoadState.Loaded
+                        }
+                    }
+                },
+                onFailure = {
+                    if (selectedPage == page) materialAboutLoadState = MaterialAboutLoadState.Unavailable
+                }
+            )
+        }
     }
 
     fun selectBook(book: Book) {
         if (selectedBook != book) {
             selectedPage = null
             currentMaterial = null
+            materialAbout = null
+            materialAboutLoadState = MaterialAboutLoadState.Idle
             materialLoadState = MaterialLoadState.Idle
             clearPlots()
             derivedOpticalConstants = null
@@ -208,6 +246,8 @@ class MainViewModel(
         selectedBook = null
         selectedPage = null
         currentMaterial = null
+        materialAbout = null
+        materialAboutLoadState = MaterialAboutLoadState.Idle
         materialLoadState = MaterialLoadState.Idle
         derivedOpticalConstants = null
         fresnelResult = null
@@ -219,6 +259,8 @@ class MainViewModel(
             selectedBook = null
             selectedPage = null
             currentMaterial = null
+            materialAbout = null
+            materialAboutLoadState = MaterialAboutLoadState.Idle
             materialLoadState = MaterialLoadState.Idle
             clearPlots()
             derivedOpticalConstants = null
@@ -315,6 +357,7 @@ class MainViewModelFactory(
     private val fallbackCatalogue: Catalogue,
     private val databaseRevision: DatabaseRevision = DatabaseRevision.Latest,
     private val materialRepository: MaterialRepository = RemoteMaterialRepository(revision = databaseRevision),
+    private val materialAboutRepository: MaterialAboutRepository = RemoteMaterialAboutRepository(revision = databaseRevision),
     private val catalogueRepository: CatalogueRepository = RemoteCatalogueRepository(),
     private val settingsRepository: SettingsRepository = InMemorySettingsRepository()
 ) : ViewModelProvider.Factory {
@@ -328,6 +371,7 @@ class MainViewModelFactory(
             return MainViewModel(
                 fallbackCatalogue = fallbackCatalogue,
                 materialRepository = materialRepository,
+                materialAboutRepository = materialAboutRepository,
                 catalogueRepository = catalogueRepository,
                 databaseRevision = databaseRevision,
                 settingsRepository = settingsRepository
