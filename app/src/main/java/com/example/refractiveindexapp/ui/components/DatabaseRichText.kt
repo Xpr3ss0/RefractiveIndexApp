@@ -1,6 +1,11 @@
 package com.example.refractiveindexapp.ui.components
 
+import android.text.SpannableString
+import android.text.Spanned
 import android.text.method.LinkMovementMethod
+import android.text.style.RelativeSizeSpan
+import android.text.style.SubscriptSpan
+import android.text.style.SuperscriptSpan
 import android.widget.TextView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -46,7 +51,7 @@ fun DatabaseRichText(
             )
             textView.isClickable = !linksEnabled && onClick != null
             if (text.containsHtmlMarkup()) {
-                textView.text = HtmlCompat.fromHtml(text, HtmlCompat.FROM_HTML_MODE_LEGACY)
+                textView.text = parseDatabaseHtml(text)
             } else {
                 markwon.setMarkdown(textView, text)
             }
@@ -55,3 +60,30 @@ fun DatabaseRichText(
 }
 
 private fun String.containsHtmlMarkup(): Boolean = htmlTagPattern.containsMatchIn(this)
+
+/**
+ * Android lowers HTML subscripts but leaves their glyphs at the surrounding size.
+ * Scaling them here keeps chemical formulas such as BaB₂O₄ visually balanced.
+ */
+private fun parseDatabaseHtml(text: String): Spanned {
+    val styledText = SpannableString(
+        HtmlCompat.fromHtml(text, HtmlCompat.FROM_HTML_MODE_LEGACY)
+    )
+    styledText.getSpans(0, styledText.length, SubscriptSpan::class.java).forEach { span ->
+        styledText.setSpan(
+            RelativeSizeSpan(0.7f),
+            styledText.getSpanStart(span),
+            styledText.getSpanEnd(span),
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+    }
+    styledText.getSpans(0, styledText.length, SuperscriptSpan::class.java).forEach { span ->
+        styledText.setSpan(
+            RelativeSizeSpan(0.7f),
+            styledText.getSpanStart(span),
+            styledText.getSpanEnd(span),
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+    }
+    return styledText
+}
