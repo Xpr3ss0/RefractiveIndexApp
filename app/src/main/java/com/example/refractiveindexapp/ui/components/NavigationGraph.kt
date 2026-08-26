@@ -29,6 +29,9 @@ fun AppNavigation(
                 },
                 onAbout = {
                     navController.navigate("about")
+                },
+                onSettings = {
+                    navController.navigate("settings")
                 }
             )
         }
@@ -46,6 +49,10 @@ fun AppNavigation(
 
         composable("about") {
             AboutScreen()
+        }
+
+        composable("settings") {
+            SettingsScreen(viewModel, onNavigateUp = navController::popBackStack)
         }
     }
 }

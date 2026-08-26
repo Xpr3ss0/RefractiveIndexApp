@@ -19,6 +19,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.refractiveindexapp.parsing.MaterialModel
@@ -35,13 +37,18 @@ import dev.xpr3ss0.scientificplot.ScientificPlot
 fun MainScreen(
     viewModel: MainViewModel,
     onAddMaterial: () -> Unit,
-    onAbout: () -> Unit
+    onAbout: () -> Unit,
+    onSettings: () -> Unit
 ) {
+    val settings by viewModel.settings.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Refractive index") },
                 actions = {
+                    TextButton(onClick = onSettings) {
+                        Text("Settings")
+                    }
                     TextButton(onClick = onAbout) {
                         Text("About")
                     }
@@ -104,7 +111,7 @@ fun MainScreen(
                 }
                 MaterialLoadState.Loaded -> viewModel.currentMaterial?.let { material ->
                     item { MaterialSummary(material) }
-                    item { DerivedOpticalConstantsCard(viewModel) }
+                    item { DerivedOpticalConstantsCard(viewModel, settings.hideUnavailableConstants) }
                     item { FresnelReflectionCard(viewModel) }
                     item { DispersionPlotCard(viewModel) }
                     if (material.tabulatedData?.kArray != null) {
@@ -221,7 +228,7 @@ private fun DetailRow(label: String, value: String) {
 }
 
 @Composable
-private fun DerivedOpticalConstantsCard(viewModel: MainViewModel) {
+private fun DerivedOpticalConstantsCard(viewModel: MainViewModel, hideUnavailable: Boolean) {
     val constants = viewModel.derivedOpticalConstants
     Card {
         Column(
@@ -237,7 +244,7 @@ private fun DerivedOpticalConstantsCard(viewModel: MainViewModel) {
                 error = viewModel.derivedWavelengthError,
                 unit = "µm"
             )
-            if (constants != null) DerivedConstantsRows(constants)
+            if (constants != null) DerivedConstantsRows(constants, hideUnavailable)
         }
     }
 }
@@ -279,7 +286,7 @@ private fun FresnelRows(result: FresnelResult) {
 }
 
 @Composable
-private fun DerivedConstantsRows(constants: DerivedOpticalConstants) {
+private fun DerivedConstantsRows(constants: DerivedOpticalConstants, hideUnavailable: Boolean) {
     val entries = listOf(
         "Refractive index n" to constants.refractiveIndex,
         "Extinction coefficient k" to constants.extinctionCoefficient,
@@ -292,7 +299,7 @@ private fun DerivedConstantsRows(constants: DerivedOpticalConstants) {
         "GVD (fs²/mm)" to constants.groupVelocityDispersionFsSquaredPerMm,
         "D (ps/(nm km))" to constants.dispersionPsPerNmKm
     )
-    entries.forEach { (label, value) -> DerivedConstantRow(label, value) }
+    entries.filter { !hideUnavailable || it.second.isAvailable }.forEach { (label, value) -> DerivedConstantRow(label, value) }
 }
 
 @Composable

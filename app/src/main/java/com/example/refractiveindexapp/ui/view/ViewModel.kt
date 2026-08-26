@@ -5,6 +5,7 @@ import androidx.compose.runtime.referentialEqualityPolicy
 import com.example.refractiveindexapp.parsing.Catalogue
 import com.example.refractiveindexapp.parsing.CatalogueRepository
 import com.example.refractiveindexapp.parsing.DatabaseRevision
+import com.example.refractiveindexapp.parsing.DatabaseRevisionResolver
 import com.example.refractiveindexapp.parsing.RemoteCatalogueRepository
 import com.example.refractiveindexapp.parsing.Shelf
 import androidx.compose.runtime.getValue
@@ -23,6 +24,11 @@ import com.example.refractiveindexapp.physics.DerivedOpticalConstantsCalculator
 import com.example.refractiveindexapp.physics.FresnelCalculator
 import com.example.refractiveindexapp.physics.FresnelResult
 import com.example.refractiveindexapp.physics.OpticalDataProvider
+import com.example.refractiveindexapp.settings.InMemorySettingsRepository
+import com.example.refractiveindexapp.settings.SettingsRepository
+import com.example.refractiveindexapp.settings.ThemePreference
+import com.example.refractiveindexapp.settings.ColorSchemePreference
+import com.example.refractiveindexapp.settings.DatabaseVersionPolicy
 import dev.xpr3ss0.scientificplot.model.DataSeries
 import dev.xpr3ss0.scientificplot.model.SeriesPlot
 import dev.xpr3ss0.scientificplot.state.PlotManager
@@ -47,8 +53,13 @@ class MainViewModel(
     fallbackCatalogue: Catalogue,
     private val materialRepository: MaterialRepository = RemoteMaterialRepository(),
     private val catalogueRepository: CatalogueRepository? = null,
-    private val databaseRevision: DatabaseRevision = DatabaseRevision.Latest
+    private val databaseRevision: DatabaseRevision = DatabaseRevision.Latest,
+    private val settingsRepository: SettingsRepository = InMemorySettingsRepository()
 ) : ViewModel() {
+
+    val settings = settingsRepository.settings
+    var databaseCommitError by mutableStateOf<String?>(null)
+        private set
 
     // Catalogue entries link back to their parent shelf/book, forming a cyclic graph.
     // Structural equality would recurse through that graph when a refreshed catalogue is assigned.
@@ -56,12 +67,16 @@ class MainViewModel(
         private set
 
     var catalogueLoadState by mutableStateOf<CatalogueLoadState>(
-        if (catalogueRepository == null) CatalogueLoadState.Ready else CatalogueLoadState.Loading
+        if (catalogueRepository == null || !settingsRepository.settings.value.updateCatalogueOnStartup) {
+            CatalogueLoadState.Ready
+        } else {
+            CatalogueLoadState.Loading
+        }
     )
         private set
 
     init {
-        if (catalogueRepository != null) refreshCatalogue()
+        if (catalogueRepository != null && settings.value.updateCatalogueOnStartup) refreshCatalogue()
     }
 
     var selectedShelf by mutableStateOf<Shelf?>(null)
@@ -123,6 +138,30 @@ class MainViewModel(
                         throwable.message ?: "Could not update the material catalogue."
                     )
                 }
+            )
+        }
+    }
+
+    fun setUpdateCatalogueOnStartup(enabled: Boolean) {
+        settingsRepository.setUpdateCatalogueOnStartup(enabled)
+    }
+
+    fun setThemePreference(preference: ThemePreference) {
+        settingsRepository.setThemePreference(preference)
+    }
+    fun setColorSchemePreference(preference: ColorSchemePreference) = settingsRepository.setColorSchemePreference(preference)
+    fun setHideUnavailableConstants(hide: Boolean) = settingsRepository.setHideUnavailableConstants(hide)
+    fun setDatabaseVersionPolicy(policy: DatabaseVersionPolicy) = settingsRepository.setDatabaseVersionPolicy(policy)
+    fun setDatabaseCommit(commit: String) = settingsRepository.setDatabaseCommit(commit.trim())
+    fun pinCurrentDatabaseCommit() {
+        viewModelScope.launch {
+            DatabaseRevisionResolver().currentCommit().fold(
+                onSuccess = { commit ->
+                    settingsRepository.setDatabaseCommit(commit.sha)
+                    settingsRepository.setDatabaseVersionPolicy(DatabaseVersionPolicy.SpecificCommit)
+                    databaseCommitError = null
+                },
+                onFailure = { databaseCommitError = it.message ?: "Could not resolve the current database commit." }
             )
         }
     }
@@ -276,7 +315,8 @@ class MainViewModelFactory(
     private val fallbackCatalogue: Catalogue,
     private val databaseRevision: DatabaseRevision = DatabaseRevision.Latest,
     private val materialRepository: MaterialRepository = RemoteMaterialRepository(revision = databaseRevision),
-    private val catalogueRepository: CatalogueRepository = RemoteCatalogueRepository()
+    private val catalogueRepository: CatalogueRepository = RemoteCatalogueRepository(),
+    private val settingsRepository: SettingsRepository = InMemorySettingsRepository()
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(
@@ -289,7 +329,8 @@ class MainViewModelFactory(
                 fallbackCatalogue = fallbackCatalogue,
                 materialRepository = materialRepository,
                 catalogueRepository = catalogueRepository,
-                databaseRevision = databaseRevision
+                databaseRevision = databaseRevision,
+                settingsRepository = settingsRepository
             ) as T
         }
 
