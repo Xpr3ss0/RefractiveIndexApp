@@ -319,6 +319,13 @@ private fun FresnelRows(result: FresnelResult) {
         "Critical angle, material → air (°)" to result.reverseCriticalAngleDegrees
     )
     entries.forEach { (label, value) -> DerivedConstantRow(label, value) }
+    result.brewsterAngleWarning?.let { warning ->
+        Text(
+            warning,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
 }
 
 @Composable

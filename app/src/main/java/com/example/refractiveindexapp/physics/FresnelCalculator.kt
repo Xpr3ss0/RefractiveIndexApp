@@ -20,6 +20,7 @@ data class FresnelResult(
     val phasePDegrees: DerivedValue,
     val phaseSDegrees: DerivedValue,
     val brewsterAngleDegrees: DerivedValue,
+    val brewsterAngleWarning: String? = null,
     val reverseCriticalAngleDegrees: DerivedValue
 )
 
@@ -50,6 +51,8 @@ private data class Complex(val real: Double, val imaginary: Double) {
 
 object FresnelCalculator {
     private const val LOSSLESS_K_TOLERANCE = 1e-10
+    /** Above this, the lossless Brewster-angle expression is only an approximation. */
+    private const val BREWSTER_WARNING_K_THRESHOLD = 1e-3
 
     fun calculate(material: MaterialModel, wavelengthMicrometres: Double, incidenceAngleDegrees: Double): FresnelResult {
         if (!wavelengthMicrometres.isFinite() || wavelengthMicrometres <= 0.0) {
@@ -74,7 +77,12 @@ object FresnelCalculator {
         val reflectanceP = DerivedValue(rp.magnitudeSquared())
         val reflectanceS = DerivedValue(rs.magnitudeSquared())
         val lossless = abs(k) <= LOSSLESS_K_TOLERANCE
-        val brewster = if (lossless && n > 0.0) DerivedValue(atan(n) * 180.0 / PI) else DerivedValue.unavailable("Brewster angle requires a lossless material")
+        val brewster = if (n > 0.0) DerivedValue(atan(n) * 180.0 / PI) else DerivedValue.unavailable("Material index must be positive")
+        val brewsterWarning = if (abs(k) > BREWSTER_WARNING_K_THRESHOLD) {
+            "k = ${"%.3g".format(java.util.Locale.US, k)} here; the Brewster angle uses the lossless approximation."
+        } else {
+            null
+        }
         val critical = if (!lossless) {
             DerivedValue.unavailable("Critical angle requires a lossless material")
         } else if (n < 1.0) {
@@ -91,12 +99,13 @@ object FresnelCalculator {
             DerivedValue(rp.phaseDegrees()),
             DerivedValue(rs.phaseDegrees()),
             brewster,
+            brewsterWarning,
             critical
         )
     }
 
     private fun unavailable(wavelength: Double, angle: Double, reason: String): FresnelResult {
         val unavailable = DerivedValue.unavailable(reason)
-        return FresnelResult(wavelength, angle, unavailable, unavailable, unavailable, unavailable, unavailable, unavailable, unavailable)
+        return FresnelResult(wavelength, angle, unavailable, unavailable, unavailable, unavailable, unavailable, unavailable, null, unavailable)
     }
 }
