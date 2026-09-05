@@ -78,19 +78,19 @@ fun MainScreen(
                 CatalogueLoadState.Loading -> item {
                     Card {
                         Column(Modifier.padding(16.dp)) {
-                            Text("Updating material catalogue…", style = MaterialTheme.typography.titleMedium)
+                            Text("Loading material catalogue…", style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "Downloading the current refractiveindex.info catalogue.",
+                                "Loading the selected refractiveindex.info database revision.",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 12.dp))
                         }
                     }
                 }
-                is CatalogueLoadState.UsingBundledCatalogue -> item {
+                is CatalogueLoadState.Failed -> item {
                     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("Using bundled catalogue", style = MaterialTheme.typography.titleMedium)
+                            Text("Could not load requested catalogue", style = MaterialTheme.typography.titleMedium)
                             Text(
                                 catalogueState.message,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer

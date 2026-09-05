@@ -3,6 +3,9 @@ package com.example.refractiveindexapp.utils
 import android.content.Context
 import com.example.refractiveindexapp.parsing.Catalogue
 import com.example.refractiveindexapp.parsing.CatalogueParser
+import com.example.refractiveindexapp.parsing.CatalogueSnapshot
+import com.example.refractiveindexapp.parsing.CatalogueSnapshotSource
+import com.example.refractiveindexapp.parsing.DatabaseRevision
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -18,6 +21,12 @@ fun loadCatalogue(context: Context): Catalogue {
 
     return CatalogueParser().parse(text)
 }
+
+fun loadCuratedCatalogueSnapshot(context: Context): CatalogueSnapshot = CatalogueSnapshot(
+    catalogue = loadCatalogue(context),
+    revision = DatabaseRevision.Commit(DatabaseRevision.Curated.gitRef),
+    source = CatalogueSnapshotSource.Bundled
+)
 
 suspend fun downloadTempFile(context: Context, fileUrl: String, prefix: String = "temp_download", suffix: String = ".tmp"): File? {
 

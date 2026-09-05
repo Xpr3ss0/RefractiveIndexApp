@@ -16,31 +16,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModelProvider
 import com.example.refractiveindexapp.ui.theme.IndexInfoTheme
-import com.example.refractiveindexapp.parsing.Catalogue
 import com.example.refractiveindexapp.ui.components.AppNavigation
 import com.example.refractiveindexapp.ui.view.MainViewModel
 import com.example.refractiveindexapp.ui.view.MainViewModelFactory
 import com.example.refractiveindexapp.settings.SharedPreferencesSettingsRepository
-import com.example.refractiveindexapp.settings.DatabaseVersionPolicy
-import com.example.refractiveindexapp.parsing.DatabaseRevision
-import com.example.refractiveindexapp.utils.loadCatalogue
+import com.example.refractiveindexapp.parsing.CatalogueSnapshotStore
+import com.example.refractiveindexapp.parsing.PersistentCatalogueSnapshotRepository
+import com.example.refractiveindexapp.utils.loadCuratedCatalogueSnapshot
+import java.io.File
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val catalogue = loadCatalogue(this)
+        val curatedSnapshot = loadCuratedCatalogueSnapshot(this)
         val settingsRepository = SharedPreferencesSettingsRepository(this)
+        val catalogueSnapshotRepository = PersistentCatalogueSnapshotRepository(
+            store = CatalogueSnapshotStore(File(filesDir, "catalogue-snapshots"))
+        )
 
         val viewModel = ViewModelProvider(
             this,
-            MainViewModelFactory(catalogue, settingsRepository = settingsRepository,
-                databaseRevision = settingsRepository.settings.value.let { settings ->
-                    if (settings.databaseVersionPolicy == DatabaseVersionPolicy.SpecificCommit) {
-                        runCatching { DatabaseRevision.Commit(settings.databaseCommit) }.getOrDefault(DatabaseRevision.Latest)
-                    } else DatabaseRevision.Latest
-                })
+            MainViewModelFactory(
+                curatedSnapshot = curatedSnapshot,
+                catalogueSnapshotRepository = catalogueSnapshotRepository,
+                settingsRepository = settingsRepository
+            )
         )[MainViewModel::class.java]
 
         setContent {

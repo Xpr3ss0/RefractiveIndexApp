@@ -2,11 +2,10 @@ package com.example.refractiveindexapp.ui.view
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
-import com.example.refractiveindexapp.parsing.Catalogue
-import com.example.refractiveindexapp.parsing.CatalogueRepository
+import com.example.refractiveindexapp.parsing.CatalogueSnapshot
+import com.example.refractiveindexapp.parsing.CatalogueSnapshotRepository
 import com.example.refractiveindexapp.parsing.DatabaseRevision
 import com.example.refractiveindexapp.parsing.DatabaseRevisionResolver
-import com.example.refractiveindexapp.parsing.RemoteCatalogueRepository
 import com.example.refractiveindexapp.parsing.Shelf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -49,7 +48,7 @@ sealed interface CatalogueLoadState {
     data object Ready : CatalogueLoadState
     data object Loading : CatalogueLoadState
     data object Loaded : CatalogueLoadState
-    data class UsingBundledCatalogue(val message: String) : CatalogueLoadState
+    data class Failed(val message: String) : CatalogueLoadState
 }
 
 sealed interface MaterialAboutLoadState {
@@ -60,11 +59,10 @@ sealed interface MaterialAboutLoadState {
 }
 
 class MainViewModel(
-    fallbackCatalogue: Catalogue,
+    private val curatedSnapshot: CatalogueSnapshot,
     private val materialRepository: MaterialRepository = RemoteMaterialRepository(),
     private val materialAboutRepository: MaterialAboutRepository = RemoteMaterialAboutRepository(),
-    private val catalogueRepository: CatalogueRepository? = null,
-    private val databaseRevision: DatabaseRevision = DatabaseRevision.Latest,
+    private val catalogueSnapshotRepository: CatalogueSnapshotRepository? = null,
     private val settingsRepository: SettingsRepository = InMemorySettingsRepository()
 ) : ViewModel() {
 
@@ -74,20 +72,18 @@ class MainViewModel(
 
     // Catalogue entries link back to their parent shelf/book, forming a cyclic graph.
     // Structural equality would recurse through that graph when a refreshed catalogue is assigned.
-    var catalogue by mutableStateOf(fallbackCatalogue, referentialEqualityPolicy())
+    private var activeSnapshot = curatedSnapshot
+
+    var catalogue by mutableStateOf(curatedSnapshot.catalogue, referentialEqualityPolicy())
         private set
 
-    var catalogueLoadState by mutableStateOf<CatalogueLoadState>(
-        if (catalogueRepository == null || !settingsRepository.settings.value.updateCatalogueOnStartup) {
-            CatalogueLoadState.Ready
-        } else {
-            CatalogueLoadState.Loading
-        }
-    )
+    var catalogueLoadState by mutableStateOf<CatalogueLoadState>(CatalogueLoadState.Ready)
         private set
 
     init {
-        if (catalogueRepository != null && settings.value.updateCatalogueOnStartup) refreshCatalogue()
+        if (settings.value.databaseVersionPolicy == DatabaseVersionPolicy.SpecificCommit) {
+            loadConfiguredCommit()
+        }
     }
 
     var selectedShelf by mutableStateOf<Shelf?>(null)
@@ -143,36 +139,28 @@ class MainViewModel(
         setAxisLabels(xLabel = "Angle of incidence (°)", yLabel = "Reflectance")
     }
 
-    fun refreshCatalogue() {
-        val repository = catalogueRepository ?: return
-        viewModelScope.launch {
-            catalogueLoadState = CatalogueLoadState.Loading
-            repository.load(databaseRevision).fold(
-                onSuccess = { downloadedCatalogue ->
-                    catalogue = downloadedCatalogue
-                    clearSelection()
-                    catalogueLoadState = CatalogueLoadState.Loaded
-                },
-                onFailure = { throwable ->
-                    catalogueLoadState = CatalogueLoadState.UsingBundledCatalogue(
-                        throwable.message ?: "Could not update the material catalogue."
-                    )
-                }
-            )
-        }
-    }
-
-    fun setUpdateCatalogueOnStartup(enabled: Boolean) {
-        settingsRepository.setUpdateCatalogueOnStartup(enabled)
-    }
-
     fun setThemePreference(preference: ThemePreference) {
         settingsRepository.setThemePreference(preference)
     }
     fun setColorSchemePreference(preference: ColorSchemePreference) = settingsRepository.setColorSchemePreference(preference)
     fun setHideUnavailableConstants(hide: Boolean) = settingsRepository.setHideUnavailableConstants(hide)
-    fun setDatabaseVersionPolicy(policy: DatabaseVersionPolicy) = settingsRepository.setDatabaseVersionPolicy(policy)
+    fun setDatabaseVersionPolicy(policy: DatabaseVersionPolicy) {
+        settingsRepository.setDatabaseVersionPolicy(policy)
+        databaseCommitError = null
+        when (policy) {
+            DatabaseVersionPolicy.Curated -> activateCuratedSnapshot()
+            DatabaseVersionPolicy.SpecificCommit -> loadConfiguredCommit()
+        }
+    }
     fun setDatabaseCommit(commit: String) = settingsRepository.setDatabaseCommit(commit.trim())
+    fun loadConfiguredCommit() {
+        val revision = runCatching { DatabaseRevision.Commit(settings.value.databaseCommit) }.getOrElse {
+            databaseCommitError = "Enter a 7 to 64 character Git commit SHA."
+            return
+        }
+        activateSnapshot(revision)
+    }
+
     fun pinCurrentDatabaseCommit() {
         viewModelScope.launch {
             DatabaseRevisionResolver().currentCommit().fold(
@@ -180,13 +168,51 @@ class MainViewModel(
                     settingsRepository.setDatabaseCommit(commit.sha)
                     settingsRepository.setDatabaseVersionPolicy(DatabaseVersionPolicy.SpecificCommit)
                     databaseCommitError = null
+                    activateSnapshot(commit)
                 },
                 onFailure = { databaseCommitError = it.message ?: "Could not resolve the current database commit." }
             )
         }
     }
 
+    private fun activateCuratedSnapshot() {
+        if (activeSnapshot !== curatedSnapshot) {
+            activeSnapshot = curatedSnapshot
+            catalogue = curatedSnapshot.catalogue
+            clearSelection()
+        }
+        catalogueLoadState = CatalogueLoadState.Ready
+    }
+
+    private fun activateSnapshot(revision: DatabaseRevision.Commit) {
+        if (revision == activeSnapshot.revision) {
+            catalogueLoadState = CatalogueLoadState.Ready
+            return
+        }
+        val repository = catalogueSnapshotRepository ?: run {
+            catalogueLoadState = CatalogueLoadState.Failed("This catalogue revision is unavailable in this build.")
+            return
+        }
+        viewModelScope.launch {
+            catalogueLoadState = CatalogueLoadState.Loading
+            repository.load(revision, activeSnapshot.revision).fold(
+                onSuccess = { snapshot ->
+                    activeSnapshot = snapshot
+                    catalogue = snapshot.catalogue
+                    clearSelection()
+                    catalogueLoadState = CatalogueLoadState.Loaded
+                },
+                onFailure = { throwable ->
+                    catalogueLoadState = CatalogueLoadState.Failed(
+                        throwable.message ?: "Could not load the requested catalogue."
+                    )
+                }
+            )
+        }
+    }
+
     fun selectPage(page: Page) {
+        val revision = activeSnapshot.revision
         viewModelScope.launch {
             selectedPage = page
             currentMaterial = null
@@ -196,25 +222,29 @@ class MainViewModel(
             fresnelResult = null
             materialLoadState = MaterialLoadState.Loading
             clearPlots()
-            materialRepository.load(page).fold(
+            materialRepository.load(page, revision).fold(
                 onSuccess = { material ->
-                    currentMaterial = material
-                    updateOpticalPlots()
-                    updateDerivedOpticalConstants()
-                    updateFresnel()
-                    materialLoadState = MaterialLoadState.Loaded
+                    if (selectedPage == page && activeSnapshot.revision == revision) {
+                        currentMaterial = material
+                        updateOpticalPlots()
+                        updateDerivedOpticalConstants()
+                        updateFresnel()
+                        materialLoadState = MaterialLoadState.Loaded
+                    }
                 },
                 onFailure = { throwable ->
-                    materialLoadState = MaterialLoadState.Failed(
-                        throwable.message ?: "Could not load this material."
-                    )
+                    if (selectedPage == page && activeSnapshot.revision == revision) {
+                        materialLoadState = MaterialLoadState.Failed(
+                            throwable.message ?: "Could not load this material."
+                        )
+                    }
                 }
             )
         }
         viewModelScope.launch {
-            materialAboutRepository.load(page).fold(
+            materialAboutRepository.load(page, revision).fold(
                 onSuccess = { about ->
-                    if (selectedPage == page) {
+                    if (selectedPage == page && activeSnapshot.revision == revision) {
                         materialAbout = about
                         materialAboutLoadState = if (about == null) {
                             MaterialAboutLoadState.Unavailable
@@ -224,7 +254,9 @@ class MainViewModel(
                     }
                 },
                 onFailure = {
-                    if (selectedPage == page) materialAboutLoadState = MaterialAboutLoadState.Unavailable
+                    if (selectedPage == page && activeSnapshot.revision == revision) {
+                        materialAboutLoadState = MaterialAboutLoadState.Unavailable
+                    }
                 }
             )
         }
@@ -394,11 +426,10 @@ class MainViewModel(
 }
 
 class MainViewModelFactory(
-    private val fallbackCatalogue: Catalogue,
-    private val databaseRevision: DatabaseRevision = DatabaseRevision.Latest,
-    private val materialRepository: MaterialRepository = RemoteMaterialRepository(revision = databaseRevision),
-    private val materialAboutRepository: MaterialAboutRepository = RemoteMaterialAboutRepository(revision = databaseRevision),
-    private val catalogueRepository: CatalogueRepository = RemoteCatalogueRepository(),
+    private val curatedSnapshot: CatalogueSnapshot,
+    private val materialRepository: MaterialRepository = RemoteMaterialRepository(),
+    private val materialAboutRepository: MaterialAboutRepository = RemoteMaterialAboutRepository(),
+    private val catalogueSnapshotRepository: CatalogueSnapshotRepository,
     private val settingsRepository: SettingsRepository = InMemorySettingsRepository()
 ) : ViewModelProvider.Factory {
 
@@ -409,11 +440,10 @@ class MainViewModelFactory(
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return MainViewModel(
-                fallbackCatalogue = fallbackCatalogue,
+                curatedSnapshot = curatedSnapshot,
                 materialRepository = materialRepository,
                 materialAboutRepository = materialAboutRepository,
-                catalogueRepository = catalogueRepository,
-                databaseRevision = databaseRevision,
+                catalogueSnapshotRepository = catalogueSnapshotRepository,
                 settingsRepository = settingsRepository
             ) as T
         }

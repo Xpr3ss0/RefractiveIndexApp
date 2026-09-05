@@ -60,34 +60,6 @@ fun SettingsScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Data", style = MaterialTheme.typography.titleMedium)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Update catalogue on startup")
-                                Text(
-                                    "Download the latest material catalogue when the app opens. Turn this off to use the bundled catalogue until a manual refresh is added.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = settings.updateCatalogueOnStartup,
-                                onCheckedChange = viewModel::setUpdateCatalogueOnStartup
-                            )
-                        }
-                    }
-                }
-            }
-            item {
-                Card {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
                         Text("Appearance", style = MaterialTheme.typography.titleMedium)
                         Text(
                             "Choose how the app follows your device's color mode.",
@@ -116,14 +88,23 @@ fun SettingsScreen(
                 Card {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Database version", style = MaterialTheme.typography.titleMedium)
-                        Text("Latest follows the upstream main branch. A pinned commit takes effect after restarting the app.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Latest curated is bundled with this app release. Pinned catalogues are saved locally and applied immediately.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             DatabaseVersionPolicy.entries.forEach { policy ->
-                                FilterChip(selected = settings.databaseVersionPolicy == policy, onClick = { viewModel.setDatabaseVersionPolicy(policy) }, label = { Text(if (policy == DatabaseVersionPolicy.Latest) "Latest" else "Specific commit") })
+                                FilterChip(
+                                    selected = settings.databaseVersionPolicy == policy,
+                                    onClick = { viewModel.setDatabaseVersionPolicy(policy) },
+                                    label = { Text(if (policy == DatabaseVersionPolicy.Curated) "Latest curated" else "Specific commit") }
+                                )
                             }
                         }
                         if (settings.databaseVersionPolicy == DatabaseVersionPolicy.SpecificCommit) {
                             OutlinedTextField(value = settings.databaseCommit, onValueChange = viewModel::setDatabaseCommit, label = { Text("Git commit SHA") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                            TextButton(onClick = viewModel::loadConfiguredCommit) { Text("Load commit") }
                             TextButton(onClick = viewModel::pinCurrentDatabaseCommit) { Text("Set to current upstream commit") }
                             viewModel.databaseCommitError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
                         }
