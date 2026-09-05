@@ -1,12 +1,12 @@
 package com.example.refractiveindexapp.parsing
 
-/** A reproducible upstream database revision, or the current upstream catalogue. */
+/** A reproducible upstream database revision. */
 sealed interface DatabaseRevision {
     val gitRef: String
 
-    /** The upstream default branch. Its contents may change over time. */
-    data object Latest : DatabaseRevision {
-        override val gitRef: String = "main"
+    /** The snapshot curated and bundled with this app release. */
+    data object Curated : DatabaseRevision {
+        override val gitRef: String = RefractiveIndexDatabase.CuratedCommitSha
     }
 
     /** An immutable Git commit SHA from the refractiveindex.info database. */
@@ -22,15 +22,16 @@ sealed interface DatabaseRevision {
 }
 
 object RefractiveIndexDatabase {
+    const val CuratedCommitSha = "c5c2f188e848453def5970e347399d653df2ffc2"
     private const val RawDatabaseBaseUrl =
         "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database"
 
-    fun catalogueUrl(revision: DatabaseRevision = DatabaseRevision.Latest): String =
+    fun catalogueUrl(revision: DatabaseRevision = DatabaseRevision.Curated): String =
         "$RawDatabaseBaseUrl/${revision.gitRef}/database/catalog-nk.yml"
 
     fun materialUrl(
         dataPath: String,
-        revision: DatabaseRevision = DatabaseRevision.Latest
+        revision: DatabaseRevision = DatabaseRevision.Curated
     ): String = "$RawDatabaseBaseUrl/${revision.gitRef}/database/data/$dataPath"
 
     /**
@@ -42,7 +43,7 @@ object RefractiveIndexDatabase {
      */
     fun materialAboutUrl(
         dataPath: String,
-        revision: DatabaseRevision = DatabaseRevision.Latest
+        revision: DatabaseRevision = DatabaseRevision.Curated
     ): String {
         val dataKindDirectory = dataPath.substringBeforeLast('/', missingDelimiterValue = "")
         require(dataKindDirectory.isNotEmpty()) { "A material data path must include a file name." }

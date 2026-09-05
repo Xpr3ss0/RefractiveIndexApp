@@ -27,7 +27,7 @@ Found a problem or have an idea for Index Info? Please [open an issue](https://g
 
 ## Upstream Database Changes
 
-If changes are introduced in the upstream database, data retrieval and parsing might be affected. I try to stay up to date with the latest changes on the database's main branch. However, there is also an option in the app's settings that determines the commit version of the database. Setting this to the current commit while the app is working freezes this functional state.
+The bundled catalogue is a curated, fixed upstream revision. If you need newer upstream data, Settings can pin the app to a specific database commit; that catalogue is saved locally and keeps its associated material requests reproducible.
 
 ## Data and attribution
 

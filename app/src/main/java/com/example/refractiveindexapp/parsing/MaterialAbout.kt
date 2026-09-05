@@ -41,17 +41,16 @@ class MaterialAboutParser {
 
 /** Boundary between the UI and a material's optional shared description. */
 interface MaterialAboutRepository {
-    suspend fun load(page: Page): Result<MaterialAbout?>
+    suspend fun load(page: Page, revision: DatabaseRevision): Result<MaterialAbout?>
 }
 
 class RemoteMaterialAboutRepository(
     private val parser: MaterialAboutParser = MaterialAboutParser(),
-    private val revision: DatabaseRevision = DatabaseRevision.Latest,
     private val downloader: suspend (String) -> String? = ::downloadText
 ) : MaterialAboutRepository {
     private val cache = mutableMapOf<String, Result<MaterialAbout?>>()
 
-    override suspend fun load(page: Page): Result<MaterialAbout?> {
+    override suspend fun load(page: Page, revision: DatabaseRevision): Result<MaterialAbout?> {
         val url = RefractiveIndexDatabase.materialAboutUrl(page.dataPath, revision)
         return cache.getOrPut(url) {
             runCatching {

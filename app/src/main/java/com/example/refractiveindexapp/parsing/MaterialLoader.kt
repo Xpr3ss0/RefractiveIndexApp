@@ -157,7 +157,7 @@ class MaterialGatherer(val catalogue: Catalogue) {
 
     suspend fun pullPageData(
         page: Page,
-        revision: DatabaseRevision = DatabaseRevision.Latest
+        revision: DatabaseRevision = DatabaseRevision.Curated
     ) : MaterialModel? =
         withContext(Dispatchers.IO) {
             // get material yml file and parse

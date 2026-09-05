@@ -1,26 +1,30 @@
 package com.example.refractiveindexapp
 
 import com.example.refractiveindexapp.parsing.CatalogueParser
+import com.example.refractiveindexapp.parsing.CatalogueSnapshotSource
+import com.example.refractiveindexapp.parsing.CatalogueSnapshotStore
 import com.example.refractiveindexapp.parsing.DatabaseRevision
+import com.example.refractiveindexapp.parsing.PersistentCatalogueSnapshotRepository
 import com.example.refractiveindexapp.parsing.RefractiveIndexDatabase
-import com.example.refractiveindexapp.parsing.RemoteCatalogueRepository
-import com.example.refractiveindexapp.settings.AppSettings
-import com.example.refractiveindexapp.settings.InMemorySettingsRepository
-import com.example.refractiveindexapp.ui.view.CatalogueLoadState
-import com.example.refractiveindexapp.ui.view.MainViewModel
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlinx.coroutines.runBlocking
+import java.nio.file.Files
 
 class DatabaseRepositoryTest {
+    private val catalogueText = """
+        - SHELF: main
+          name: Main
+          content: []
+    """.trimIndent()
 
     @Test
-    fun `latest revision uses upstream main branch`() {
-        assertEquals(
-            "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/main/database/catalog-nk.yml",
-            RefractiveIndexDatabase.catalogueUrl()
-        )
+    fun `default catalogue URL uses curated revision`() {
+        assertTrue(RefractiveIndexDatabase.catalogueUrl().contains("/${RefractiveIndexDatabase.CuratedCommitSha}/"))
+        assertEquals(RefractiveIndexDatabase.CuratedCommitSha, DatabaseRevision.Curated.gitRef)
     }
 
     @Test
@@ -38,43 +42,49 @@ class DatabaseRepositoryTest {
     }
 
     @Test
-    fun `remote catalogue repository parses downloaded catalogue`() = runBlocking {
-        val repository = RemoteCatalogueRepository(
-            parser = CatalogueParser(),
-            downloader = {
-                """
-                - SHELF: main
-                  name: Main
-                  content: []
-                """.trimIndent()
-            }
-        )
+    fun `persistent repository uses a matching cached catalogue without downloading`() = runBlocking {
+        val directory = Files.createTempDirectory("catalogue-cache-test").toFile()
+        val revision = DatabaseRevision.Commit("0123456")
+        val store = CatalogueSnapshotStore(directory)
+        store.write(revision, catalogueText)
+        var downloads = 0
+        val repository = PersistentCatalogueSnapshotRepository(store) {
+            downloads++
+            catalogueText
+        }
 
-        val result = repository.load(DatabaseRevision.Commit("0123456"))
+        val result = repository.load(revision)
 
         assertTrue(result.isSuccess)
-        assertEquals("main", result.getOrThrow().entries.single().id)
+        assertEquals(CatalogueSnapshotSource.Cache, result.getOrThrow().source)
+        assertEquals(0, downloads)
     }
 
     @Test
-    fun `disabled startup update leaves bundled catalogue ready for selection`() {
-        val catalogue = CatalogueParser().parse(
-            """
-            - SHELF: main
-              name: Main
-              content: []
-            """.trimIndent()
-        )
+    fun `corrupt cache is replaced by a validated download`() = runBlocking {
+        val directory = Files.createTempDirectory("catalogue-cache-test").toFile()
+        val revision = DatabaseRevision.Commit("0123456")
+        val store = CatalogueSnapshotStore(directory)
+        store.write(revision, catalogueText)
+        directory.resolve("${revision.sha}.yml").writeText("not valid: [yaml")
+        val repository = PersistentCatalogueSnapshotRepository(store) { catalogueText }
 
-        val viewModel = MainViewModel(
-            fallbackCatalogue = catalogue,
-            catalogueRepository = RemoteCatalogueRepository(),
-            settingsRepository = InMemorySettingsRepository(
-                AppSettings(updateCatalogueOnStartup = false)
-            )
-        )
+        val result = repository.load(revision)
 
-        assertEquals(CatalogueLoadState.Ready, viewModel.catalogueLoadState)
-        assertEquals("main", viewModel.catalogue.entries.single().id)
+        assertTrue(result.isSuccess)
+        assertEquals(CatalogueSnapshotSource.Remote, result.getOrThrow().source)
+        assertNotNull(store.read(revision))
+    }
+
+    @Test
+    fun `store retains at most ten remote snapshots`() {
+        val directory = Files.createTempDirectory("catalogue-cache-test").toFile()
+        val store = CatalogueSnapshotStore(directory, CatalogueParser())
+        repeat(11) { index ->
+            store.write(DatabaseRevision.Commit("%07x".format(index + 1)), catalogueText)
+        }
+
+        assertTrue(directory.listFiles { file -> file.name.endsWith(".meta") }!!.size <= 10)
+        assertFalse(directory.resolve("0000001.yml").exists())
     }
 }

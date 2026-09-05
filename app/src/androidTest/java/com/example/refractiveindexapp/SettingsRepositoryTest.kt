@@ -7,7 +7,6 @@ import com.example.refractiveindexapp.settings.ThemePreference
 import com.example.refractiveindexapp.settings.ColorSchemePreference
 import com.example.refractiveindexapp.settings.DatabaseVersionPolicy
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -20,7 +19,6 @@ class SettingsRepositoryTest {
         val preferencesName = "settings-test-${System.nanoTime()}"
         val firstRepository = SharedPreferencesSettingsRepository(context, preferencesName)
 
-        firstRepository.setUpdateCatalogueOnStartup(false)
         firstRepository.setThemePreference(ThemePreference.Dark)
         firstRepository.setColorSchemePreference(ColorSchemePreference.Ocean)
         firstRepository.setDatabaseVersionPolicy(DatabaseVersionPolicy.SpecificCommit)
@@ -29,12 +27,26 @@ class SettingsRepositoryTest {
 
         val restoredRepository = SharedPreferencesSettingsRepository(context, preferencesName)
 
-        assertFalse(restoredRepository.settings.value.updateCatalogueOnStartup)
         assertEquals(ThemePreference.Dark, restoredRepository.settings.value.themePreference)
         assertEquals(ColorSchemePreference.Ocean, restoredRepository.settings.value.colorSchemePreference)
         assertEquals(DatabaseVersionPolicy.SpecificCommit, restoredRepository.settings.value.databaseVersionPolicy)
         assertEquals("0123456", restoredRepository.settings.value.databaseCommit)
         org.junit.Assert.assertTrue(restoredRepository.settings.value.hideUnavailableConstants)
+        context.getSharedPreferences(preferencesName, 0).edit().clear().apply()
+    }
+
+    @Test
+    fun legacyLatestPolicyMigratesToCurated() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val preferencesName = "settings-migration-test-${System.nanoTime()}"
+        context.getSharedPreferences(preferencesName, 0)
+            .edit()
+            .putString("database_policy", "Latest")
+            .apply()
+
+        val repository = SharedPreferencesSettingsRepository(context, preferencesName)
+
+        assertEquals(DatabaseVersionPolicy.Curated, repository.settings.value.databaseVersionPolicy)
         context.getSharedPreferences(preferencesName, 0).edit().clear().apply()
     }
 }

@@ -14,8 +14,10 @@ Please cite the database when using data obtained through the app:
 
 ### Bundled catalogue snapshot
 
-`app/src/main/assets/catalog-nk.yml` is a copy of the upstream catalogue and retains its upstream CC0 header. It entered this repository on 2026-07-26. The original upstream revision was not recorded at that time.
+`app/src/main/assets/catalog-nk.yml` is the curated catalogue snapshot bundled with this app and retains its upstream CC0 header.
 
-Future catalogue updates must record the upstream Git commit or release tag, retrieval date, and SHA-256 hash in this document. Runtime material records are fetched from the upstream repository; their per-record references remain visible in the application.
+| Upstream commit | Retrieved | SHA-256 |
+| --- | --- | --- |
+| `c5c2f188e848453def5970e347399d653df2ffc2` | 2026-09-05 | `d4df827ad10482a563794486d6bbd5057adca79df226e1aa4e729ebf221d6b0f` |
 
-The application defaults to the upstream `main` branch to retrieve the newest catalogue and material records. The data-acquisition API also accepts an immutable upstream Git commit SHA when a reproducible catalogue/data pair is required.
+Future catalogue updates must record the upstream Git commit, retrieval date, and SHA-256 hash in this document. The app can also download and persist catalogues for user-selected immutable commits. Runtime material records are fetched from the active snapshot's matching upstream revision; their per-record references remain visible in the application.
