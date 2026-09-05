@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Browse existing issues
+    url: https://github.com/Xpr3ss0/RefractiveIndexApp/issues
+    about: Check whether the same problem or suggestion has already been reported.

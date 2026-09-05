@@ -21,6 +21,10 @@ The app is designed around a compact material-selection flow and touch-friendly 
 
 Download the signed APK from the [latest GitHub release](https://github.com/Xpr3ss0/RefractiveIndexApp/releases/latest). Android may ask you to allow the browser or file manager to install unknown apps. Updates installed from later releases retain app data when they are signed with the same release key.
 
+## Feedback and support
+
+Found a problem or have an idea for Index Info? Please [open an issue](https://github.com/Xpr3ss0/RefractiveIndexApp/issues/new/choose). Bug reports and feature requests are both welcome.
+
 ## Data and attribution
 
 Material data is sourced from the [refractiveindex.info database](https://github.com/polyanskiy/refractiveindex.info-database), which is dedicated to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). This is an independent application and is not affiliated with or endorsed by refractiveindex.info or M. N. Polyanskiy.
@@ -33,13 +37,7 @@ See [DATA_SOURCES.md](DATA_SOURCES.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_
 
 ## Development
 
-Open the project in Android Studio or build a debug APK with:
-
-```bash
-./gradlew :app:assembleDebug
-```
-
-See [the release guide](docs/releasing.md) for signing and publishing a tagged release.
+For local setup, testing, and project structure, see the [development guide](docs/development.md). Maintainers can use the [release guide](docs/releasing.md) to sign and publish tagged releases.
 
 ## License
 
