@@ -2,6 +2,21 @@
 
 A mobile-first Android interface for refractiveindex.info data. It provides material selection, dispersion and extinction-coefficient plots, derived optical constants, and a Fresnel calculator.
 
+## Screenshots
+
+The app is designed around a compact material-selection flow and touch-friendly scientific plots.
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>Material selection</strong><br><br><img src="docs/images/material-selection.jpg" alt="Three-step material selection for BaB2O4" width="240"></td>
+    <td width="50%" align="center"><strong>Dispersion and extinction</strong><br><br><img src="docs/images/dispersion-and-extinction-plots.jpg" alt="Dispersion and extinction coefficient plots" width="240"></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><strong>Fresnel reflectance</strong><br><br><img src="docs/images/fresnel-reflectance.jpg" alt="Rp and Rs Fresnel reflectance plot" width="300"></td>
+    <td width="50%" align="center"><strong>Derived optical constants</strong><br><br><img src="docs/images/derived-optical-constants.jpg" alt="Derived optical constants at a selected wavelength" width="240"></td>
+  </tr>
+</table>
+
 ## Install
 
 Download the signed APK from the [latest GitHub release](https://github.com/Xpr3ss0/RefractiveIndexApp/releases/latest). Android may ask you to allow the browser or file manager to install unknown apps. Updates installed from later releases retain app data when they are signed with the same release key.
