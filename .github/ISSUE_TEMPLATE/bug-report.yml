@@ -1,0 +1,57 @@
+name: Bug report
+description: Report something in Index Info that does not work as expected.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please remove any personal or sensitive information from screenshots and logs.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Briefly describe the unexpected behaviour.
+      placeholder: The material selector does not open after tapping Book.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Give the smallest sequence of steps that consistently shows the problem.
+      placeholder: |
+        1. Open Index Info
+        2. Tap Change material
+        3. Tap Book
+        4. Observe …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: The Book selector opens immediately.
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Find this on the app's About screen or the GitHub release page.
+      placeholder: 1.0.2
+    validations:
+      required: true
+  - type: input
+    id: android-version
+    attributes:
+      label: Android version and device
+      placeholder: Android 16, Pixel 8
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add screenshots, relevant logs, the selected material, or anything else that may help.
